@@ -1,0 +1,32 @@
+/* Theme tokens. Mode (light/dark) x tone (4 options). Glass is a 0..1 slider (--glass) applied only to shell
+   and card surfaces. Tables, forms and the POS keep solid surfaces for legibility.
+   Usage: <html data-mode="light" data-tone="ops" style="--glass:0.4"> ; per-module override via data-module (later). */
+:root {
+  --glass: 0;                           /* 0 = solid, 1 = full glass; bound to a slider */
+  --blur: calc(var(--glass) * 24px);
+  --glass-alpha: calc(1 - var(--glass) * 0.45);
+  --radius: 12px; --space: 4px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ease-spring: cubic-bezier(.2,.9,.25,1.1);
+}
+/* Tones: three colors each (primary, secondary, accent) plus neutrals per mode */
+[data-tone="ops"]      { --primary:#0F766E; --secondary:#334155; --accent:#F59E0B; }
+[data-tone="walnut"]   { --primary:#7A4B2A; --secondary:#7C9A5B; --accent:#E0A526; }
+[data-tone="pistachio"]{ --primary:#2F6B4F; --secondary:#A8C686; --accent:#C8643B; }
+[data-tone="indigo"]   { --primary:#2B3A8C; --secondary:#6B3FA0; --accent:#D9A441; }
+[data-mode="light"] { --bg:#F6F7F9; --surface:#FFFFFF; --text:#0F172A; --muted:#64748B; --line:#E2E8F0; --scrim:rgba(15,23,42,.35); }
+[data-mode="dark"]  { --bg:#0B1220; --surface:#131C2E; --text:#E8EDF5; --muted:#93A1B8; --line:#25314A; --scrim:rgba(0,0,0,.55); }
+[data-tone="walnut"][data-mode="dark"]   { --bg:#17110C; --surface:#211812; --line:#3A2C20; }
+[data-tone="pistachio"][data-mode="dark"]{ --bg:#0E1713; --surface:#16231C; --line:#26382E; }
+[data-tone="indigo"][data-mode="dark"]   { --bg:#0C1024; --surface:#141A38; --line:#2A3263; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.5; }
+h1,h2,h3 { letter-spacing: -0.02em; line-height: 1.15; }              /* tight tracking and leading as size grows */
+.glass { background: color-mix(in srgb, var(--surface) calc(var(--glass-alpha) * 100%), transparent);
+         backdrop-filter: blur(var(--blur)) saturate(calc(1 + var(--glass) * .8));
+         border: 1px solid color-mix(in srgb, #fff 35%, var(--line)); border-radius: var(--radius); }
+.solid { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.btn:active { transform: scale(.97); transition: transform 100ms ease-out; }   /* respond on press */
+.pos { --glass: 0; font-size: 16px; }                                   /* POS stays solid, larger touch targets */
+.pos .btn { min-height: 48px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@media (prefers-reduced-transparency: reduce) { :root { --glass: 0 !important; } }

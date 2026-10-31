@@ -1,0 +1,39 @@
+"""python -m dfh.seed.run [--months 6] [--seed 42] [--db sqlite:///data/dfh.db] [--data data]"""
+import argparse, os, random, time
+from sqlalchemy import insert
+from ..schema import metadata
+from ..db import get_engine
+from .masters import build_masters
+from . import history
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--months", type=int, default=6); ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--db", default="sqlite:///data/dfh.db"); ap.add_argument("--data", default="data")
+    ap.add_argument("--no-history", action="store_true")
+    a = ap.parse_args()
+    os.makedirs(a.data, exist_ok=True)
+    if a.db.startswith("sqlite:///"):
+        p = a.db.replace("sqlite:///", "")
+        if os.path.exists(p):
+            os.remove(p)
+    eng = get_engine(a.db); t0 = time.time()
+    metadata.create_all(eng)
+    T, info = build_masters(random.Random(a.seed), a.seed)
+    with eng.begin() as c:
+        for t in metadata.sorted_tables:
+            if t.name in T and T[t.name]:
+                cols = {x.name for x in t.columns}
+                keys = [k for k in cols if any(k in r for r in T[t.name])]
+                rows = [{k: r.get(k, False if str(t.c[k].type) == "BOOLEAN" else None) for k in keys} for r in T[t.name]]
+                for i in range(0, len(rows), 5000):
+                    c.execute(insert(t), rows[i:i + 5000])
+    print(f"masters loaded in {time.time() - t0:.1f}s")
+    if not a.no_history:
+        t1 = time.time()
+        print("history:", history.run(eng, a.months, a.seed, a.data), f"{time.time() - t1:.1f}s")
+
+
+if __name__ == "__main__":
+    main()
