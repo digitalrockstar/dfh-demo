@@ -2,6 +2,7 @@
 
 Tokens: `frontend/src/theme/tokens.css`. Reference: `docs/skills/apple-design.md`.
 
+- Default tone is DFH (warm ink and amber, sampled from the logo). Mode: light, auto or dark, chosen in the appearance popover along with tone and glass.
 - Modes: light and dark. Tones: ops (teal, slate, amber), walnut (brown, sage, saffron), pistachio (forest, pistachio, terracotta), indigo (indigo, plum, gold).
 - Each tone is 3 colors plus neutrals. Status colors stay fixed across tones.
 - Glass: one slider, `--glass` from 0 to 1, drives blur and surface opacity on shell and cards only. Tables, forms and POS stay solid. Honors prefers-reduced-transparency.

@@ -4,6 +4,7 @@ Full product plan: `docs/DFH_Product_Plan_v1.pdf` (25 pages; source `docs/build_
 
 ## Build order (module by module, each end to end with tests)
 0. Foundation: schema (95 tables), masters, 6-month seed, theme tokens. DONE.
+0b. App shell, Platform thin slice (login, roles, scope, audit), Module 2 SKU master, Control Tower v0. DONE.
 1. Module 2 SKU master (API, screens, import, price history).
 2. Module 10 Platform, thin slice (login, roles, audit, approvals) because every module needs it.
 3. Module 4 Inventory and warehouse (ledger, batches, FEFO, transfers, repack, indents, counts).
