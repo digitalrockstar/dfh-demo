@@ -2,4 +2,8 @@ sqlalchemy>=2.0
 numpy
 pyarrow
 duckdb
+fastapi
+uvicorn
+httpx
 pytest
+playwright  # only for scripts/smoke.py and the plan deck
