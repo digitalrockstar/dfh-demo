@@ -9,7 +9,7 @@ from sqlalchemy import text
 from . import auth
 from .analytics import Analytics
 from .db import get_engine
-from . import wastage_api
+from . import wastage_api, demand_api
 
 NOW = datetime(2026, 10, 31, 9, 0)           # demo "now", matches the seeded data
 STATUSES = ["draft", "active", "restricted", "delisted"]
@@ -197,6 +197,7 @@ def create_app(db_url=None, data_dir=None, serve_frontend=True):
         return dict(region=region or None, tier=tier or None, city=city or None, store_ids=scope(u))
 
     wa = wastage_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW))
+    da = demand_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW))
     ct = need(CT_ROLES)
 
     @app.get("/api/ct/summary")
@@ -228,6 +229,7 @@ def create_app(db_url=None, data_dir=None, serve_frontend=True):
         for d in an.sales_drops(**f):
             out.append(dict(type="drop", severity="med", title=f"{d['name']} is selling {int((1 - d['ratio']) * 100)}% below its recent run rate", detail=f"{d['city']}. Last 7 days against the previous 4 weeks.", ref=d["id"]))
         out += wa["exceptions"](f)
+        out += da["exceptions"](f)
         order = {"high": 0, "med": 1}
         return sorted(out, key=lambda x: order[x["severity"]])
 

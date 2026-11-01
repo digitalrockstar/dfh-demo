@@ -110,8 +110,10 @@ applicant: job_id i fk=job_posting.id I; name s80; stage s16; applied_on d; sour
 announcement: title s120; body t; created_at dt; audience s30
 ## analytics
 forecast_run: run_at dt; method s30; horizon_weeks i; wape f N; notes t N
-forecast: run_id i fk=forecast_run.id I; store_id i fk=location.id; sku_id i fk=sku.id; week_start d; qty_forecast f; lower f; upper f
-reorder_suggestion: run_id i N fk=forecast_run.id; location_id i fk=location.id I; sku_id i fk=sku.id; suggested_qty b; reason s60; status s10; created_at dt
+forecast: run_id i fk=forecast_run.id I; store_id i fk=location.id; sku_id i fk=sku.id I; week_start d; qty_forecast f; lower f; upper f; value_paise b
+reorder_suggestion: run_id i N fk=forecast_run.id; location_id i fk=location.id I; sku_id i fk=sku.id I; vendor_id i N fk=vendor.id; suggested_qty b; approved_qty b N; unit_cost_paise f; value_paise b; on_hand b; on_order b; need_lead b; need_cycle b; cover_days f; lead_time_days i; moq b; urgency s8 I; order_by d; reason s200; status s10 I; created_at dt; decided_by i N; decided_at dt N
+stock_position: location_id i P fk=location.id; sku_id i P fk=sku.id; on_hand b; on_order b; eta_days i; as_of d
+demand_requirement: run_id i fk=forecast_run.id; location_id i fk=location.id I; sku_id i fk=sku.id I; need_qty b; base_qty b; kit_qty b; need_lead b
 kpi_snapshot: date d I; kpi s40 I; dim_type s12; dim_id i N; value f
 exception_item: ts dt I; type s30 I; severity s6; location_id i N fk=location.id; ref_type s30 N; ref_id s40 N; title s160; status s10; owner_id i N; due_date d N
 """

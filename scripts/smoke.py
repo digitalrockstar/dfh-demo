@@ -10,7 +10,7 @@ try:
         except Exception: time.sleep(0.5)
     errs = []
     with sync_playwright() as p:
-        b = p.chromium.launch(); pg = b.new_page(viewport={"width": 1440, "height": 900})
+        b = p.chromium.launch(executable_path=os.getenv("CHROME") or None); pg = b.new_page(viewport={"width": 1440, "height": 900})
         pg.on("console", lambda m: errs.append(m.text) if m.type == "error" and "422" not in m.text else None); pg.on("pageerror", lambda e: errs.append(str(e)))
         pg.goto(f"http://127.0.0.1:{PORT}/"); pg.wait_for_selector("#u"); pg.screenshot(path=f"{OUT}/1_login.png")
         pg.click("[data-act=do-login]"); pg.wait_for_selector(".kpi .v"); pg.wait_for_selector("#league tbody tr"); pg.wait_for_selector("#exc .exc"); pg.wait_for_timeout(700)
@@ -33,6 +33,12 @@ try:
         pg.click("[data-act=w-win][data-v='15']"); pg.wait_for_timeout(700); pg.click("[data-act=w-sr][data-v=EXPIRY]"); pg.wait_for_timeout(700)
         pg.click("[data-act=w-new]"); pg.wait_for_selector(".modal #wf-q"); pg.click("[data-act=w-save]"); pg.wait_for_selector(".toast.err"); pg.keyboard.press("Escape"); pg.wait_for_selector(".modal", state="detached")
         pg.screenshot(path=f"{OUT}/7_wastage_filtered.png")
+        pg.goto(f"http://127.0.0.1:{PORT}/#/demand"); pg.wait_for_selector("#dk .kpi .v"); pg.wait_for_selector("#dsug tbody tr"); pg.wait_for_selector("#dkits tbody tr"); pg.wait_for_selector("#dmm tbody tr"); pg.wait_for_selector("#dacc tbody tr"); pg.wait_for_timeout(900)
+        assert pg.locator("#dk .kpi").count() == 5 and pg.locator("#dchart svg path").count() >= 3 and pg.locator("#dbeta .b").count() == 8
+        pg.screenshot(path=f"{OUT}/8_demand.png", full_page=True)
+        pg.select_option("#dscope", "category|GFT"); pg.wait_for_timeout(900); pg.click("[data-act=d-urg][data-v=critical]"); pg.wait_for_timeout(700); assert pg.locator("#dsug tbody tr").count() >= 1
+        n0 = pg.locator("#dsug [data-act=d-dec][data-v=approve]").count(); pg.click("#dsug [data-act=d-dec][data-v=approve] >> nth=0"); pg.wait_for_selector(".toast"); pg.wait_for_timeout(700)
+        pg.screenshot(path=f"{OUT}/9_demand_filtered.png")
         pg.set_viewport_size({"width": 1440, "height": 900}); b.close()
     print("console errors:", errs or "none"); assert not errs, errs
     print("smoke ok")
