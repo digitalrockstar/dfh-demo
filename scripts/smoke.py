@@ -22,7 +22,11 @@ try:
         pg.fill("#q", "almonds california"); pg.wait_for_timeout(700); n = pg.locator(".tbl tbody tr.click").count(); assert 3 <= n < 50, n
         pg.click(".tbl tbody tr.click >> nth=0"); pg.wait_for_selector(".drawer .stats"); pg.click("[data-act=sku-tab][data-v=pricing]"); pg.wait_for_selector(".drawer .spark"); pg.wait_for_timeout(500)
         pg.screenshot(path=f"{OUT}/4_sku_pricing.png")
-        pg.click("[data-act=sku-tab][data-v=overview]"); pg.fill("#np", "1"); pg.click("[data-act=sku-save]"); pg.wait_for_selector(".toast.err"); pg.keyboard.press("Escape"); pg.wait_for_selector(".drawer", state="detached"); pg.goto(f"http://127.0.0.1:{PORT}/#/soon/inventory"); pg.wait_for_selector(".soonbox")
+        pg.click("[data-act=sku-tab][data-v=overview]"); pg.fill("#np", "1"); pg.click("[data-act=sku-save]"); pg.wait_for_selector(".toast.err"); pg.keyboard.press("Escape"); pg.wait_for_selector(".drawer", state="detached"); pg.goto(f"http://127.0.0.1:{PORT}/#/inventory"); pg.wait_for_selector("#invbody .kpi .v"); pg.wait_for_selector("#invbody .exc"); pg.wait_for_timeout(500); pg.screenshot(path=f"{OUT}/5_inventory.png")
+        pg.click("#invbody tbody tr.click >> nth=0"); pg.wait_for_selector("#invbody .tbl tbody tr.click"); pg.click("#invbody .tbl tbody tr.click >> nth=0"); pg.wait_for_selector(".drawer .tbl"); pg.screenshot(path=f"{OUT}/6_inv_sku.png"); pg.keyboard.press("Escape")
+        for t in ("expiry", "transfers", "indents", "repack", "counts", "kits"):
+            pg.click(f"[data-act=inv-tab][data-v={t}]"); pg.wait_for_selector("#invbody .tbl, #invbody .card"); pg.wait_for_timeout(400)
+        pg.click("[data-act=inv-tab][data-v=transfers]"); pg.wait_for_selector("#invbody tr.click"); pg.click("#invbody tr.click >> nth=0"); pg.wait_for_selector(".drawer .tbl"); pg.screenshot(path=f"{OUT}/7_inv_transfer.png"); pg.keyboard.press("Escape")
         pg.click("[data-act=settings]"); pg.click("[data-act=set-mode][data-v=dark]"); pg.fill("#gl", "80"); pg.dispatch_event("#gl", "input"); pg.click("[data-act=set-tone][data-v=ops]")
         pg.goto(f"http://127.0.0.1:{PORT}/#/control-tower"); pg.wait_for_selector("#exc .exc"); pg.wait_for_timeout(900)
         pg.screenshot(path=f"{OUT}/5_dark_ops_glass.png")

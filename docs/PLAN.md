@@ -7,7 +7,7 @@ Full product plan: `docs/DFH_Product_Plan_v1.pdf` (25 pages; source `docs/build_
 0b. App shell, Platform thin slice (login, roles, scope, audit), Module 2 SKU master, Control Tower v0. DONE.
 1. Module 2 SKU master (API, screens, import, price history).
 2. Module 10 Platform, thin slice (login, roles, audit, approvals) because every module needs it.
-3. Module 4 Inventory and warehouse (ledger, batches, FEFO, transfers, repack, indents, counts).
+3. Module 4 Inventory and warehouse (ledger, batches, FEFO, transfers, repack, indents, counts). DONE, browser smoke pending.
 4. Module 3 Procurement and logistics (price book, landed cost, PO, shipment tracker, GRN, three-way match).
 5. POS foundation (PWA, IndexedDB, sync with idempotency keys, invoice series per device, day close, returns within 10 days for defective or damaged).
 6. Module 5 Wastage and shrink.

@@ -4,7 +4,7 @@ from sqlalchemy import insert
 from ..schema import metadata
 from ..db import get_engine
 from .masters import build_masters
-from . import history
+from . import history, inventory
 
 
 def main():
@@ -33,6 +33,7 @@ def main():
     if not a.no_history:
         t1 = time.time()
         print("history:", history.run(eng, a.months, a.seed, a.data), f"{time.time() - t1:.1f}s")
+        t2 = time.time(); print("inventory:", inventory.run(eng, a.seed), f"{time.time() - t2:.1f}s")
 
 
 if __name__ == "__main__":

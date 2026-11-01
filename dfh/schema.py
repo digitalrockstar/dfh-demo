@@ -53,7 +53,7 @@ vendor_payment: vendor_id i fk=vendor.id I; invoice_id i N fk=vendor_invoice.id;
 debit_note: vendor_id i fk=vendor.id; grn_id i N fk=grn.id; amount_paise b; reason s60; created_at dt
 stock_ledger: ts dt; location_id i fk=location.id; bin_id i N fk=location_bin.id; sku_id i fk=sku.id; batch_id i N fk=batch.id; qty b; movement_type s20; doc_type s20; doc_id s40; unit_cost_paise b N; user_id i N; device_id i N
 stock_balance: location_id i P fk=location.id; sku_id i P fk=sku.id; batch_id i P; qty b; updated_at dt
-transfer: transfer_no s30 U; from_location_id i fk=location.id; to_location_id i fk=location.id; status s12 I; created_at dt; dispatched_at dt N; received_at dt N; vehicle_no s20 N; eway_ref s30 N
+transfer: transfer_no s30 U; indent_id i N; from_location_id i fk=location.id; to_location_id i fk=location.id; status s12 I; created_at dt; dispatched_at dt N; received_at dt N; vehicle_no s20 N; eway_ref s30 N
 transfer_line: transfer_id i fk=transfer.id I; sku_id i fk=sku.id; batch_id i N fk=batch.id; qty_sent b; qty_received b N
 indent: indent_no s30 U; store_id i fk=location.id I; warehouse_id i fk=location.id; status s12; created_at dt; needed_by d
 indent_line: indent_id i fk=indent.id I; sku_id i fk=sku.id; qty_req b; qty_alloc b; qty_dispatched b
@@ -117,7 +117,8 @@ exception_item: ts dt I; type s30 I; severity s6; location_id i N fk=location.id
 """
 
 IDX = {
-    "stock_ledger": [["location_id", "sku_id", "ts"], ["batch_id"]],
+    "stock_ledger": [["location_id", "sku_id", "ts"], ["batch_id"], ["movement_type", "ts"]],
+    "transfer": [["from_location_id"], ["to_location_id"], ["indent_id"]],
     "vendor_sku_cost": [["vendor_id", "sku_id", "effective_from"], ["sku_id"]],
     "sale": [["store_id", "business_date"]],
     "attendance": [["employee_id", "date"]],
