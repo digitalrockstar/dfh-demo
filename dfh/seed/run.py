@@ -5,6 +5,7 @@ from ..schema import metadata
 from ..db import get_engine
 from .masters import build_masters
 from . import history, wastage
+from ..demand import model as demand
 
 
 def main():
@@ -34,6 +35,7 @@ def main():
         t1 = time.time()
         print("history:", history.run(eng, a.months, a.seed, a.data), f"{time.time() - t1:.1f}s")
         print("wastage:", wastage.run(eng, a.seed, a.data))
+        print("demand:", demand.run(eng, a.data, a.seed))
 
 
 if __name__ == "__main__":
