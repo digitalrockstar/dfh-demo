@@ -83,3 +83,5 @@ textarea.input{width:100%;min-height:130px;font-family:ui-monospace,Menlo,monosp
 .spark{display:block}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media(prefers-reduced-transparency:reduce){:root{--glass:0!important}}
+
+.bars.wide .r{grid-template-columns:minmax(120px,1.1fr) 1.2fr minmax(90px,.9fr)}.bars.wide .r>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bars.wide .num.r{text-align:right;white-space:nowrap}

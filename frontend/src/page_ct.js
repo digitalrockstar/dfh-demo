@@ -6,7 +6,7 @@ const st = { days: 30, region: "", order: "top", tier: "" };
 let filters = { regions: [] }, root = null;
 const qs = () => `days=${st.days}&region=${encodeURIComponent(st.region)}&tier=${st.tier}`;
 
-const LATER = [["Cash variance by store", "POS day close"], ["Stock value at risk of expiry", "Wastage and shrink"], ["Purchase orders running late", "Procurement"], ["Unreconciled settlements", "Finance"]];
+const LATER = [["Cash variance by store", "POS day close"], ["Purchase orders running late", "Procurement"], ["Unreconciled settlements", "Finance"]];
 
 export async function render(el) {
   root = el; filters = await api("/ct/filters").catch(() => ({ regions: [] }));
@@ -39,7 +39,7 @@ async function refresh() {
       <div class="kpi glass"><div class="l">Net sales per store per day</div><div class="v">${inr(c.per_store_day)}</div><div class="s">${deltaPill(s.delta.per_store_day, " " + dlabel)}</div></div>
       <div class="kpi glass"><div class="l">Stockout events</div><div class="v">${num(s.stockouts.events)}</div><div class="s">${num(s.stockouts.days)} store-SKU days lost across ${num(s.stockouts.stores)} stores</div></div>
       <div class="kpi glass"><div class="l">Stores not syncing</div><div class="v">${syncN}</div><div class="s">${num(c.stores)} stores selling in this period</div></div>`);
-    const draw = () => trendChart(root.querySelector("#trend"), tr, s.festivals); window.__ctTrend = draw; draw();
+    const draw = () => { const t = root.querySelector("#trend"); if (t) trendChart(t, tr, s.festivals); }; window.__ctTrend = draw; draw();
     mount(root.querySelector("#mix"), html`${mix.map(m => html`<div class="r"><span>${m.name}</span><div class="b"><i style="width:${(m.share / mix[0].share * 100).toFixed(1)}%"></i></div><span class="num r">${pct(m.share)} <span class="muted small">GM ${pct(m.gm, 0)}</span></span></div>`)}`);
     mount(root.querySelector("#league"), html`<div class="tblwrap" style="max-height:420px"><table class="tbl"><thead><tr><th>#</th><th>Store</th><th>City</th><th class="r">Per day</th><th class="r">GM</th><th class="r">Change</th></tr></thead><tbody>
       ${lg.rows.map((r, i) => html`<tr><td class="muted">${i + 1}</td><td><b>${r.name.replace("Dry Fruit House ", "")}</b><div class="small muted">${r.code}${r.new ? " · new store" : ""}</div></td><td>${r.city}</td><td class="r">${inr(r.per_day)}</td><td class="r">${pct(r.gm, 0)}</td><td class="r">${r.vs_prev == null ? raw('<span class="muted">n/a</span>') : deltaPill(r.vs_prev)}</td></tr>`)}</tbody></table></div><p class="small muted" style="margin-top:8px">Ranked on net sales per trading day, ${num(lg.total)} stores in view. New stores are left out of the bottom list.</p>`);

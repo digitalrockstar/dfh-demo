@@ -4,7 +4,7 @@ from sqlalchemy import insert
 from ..schema import metadata
 from ..db import get_engine
 from .masters import build_masters
-from . import history
+from . import history, wastage
 
 
 def main():
@@ -33,6 +33,7 @@ def main():
     if not a.no_history:
         t1 = time.time()
         print("history:", history.run(eng, a.months, a.seed, a.data), f"{time.time() - t1:.1f}s")
+        print("wastage:", wastage.run(eng, a.seed, a.data))
 
 
 if __name__ == "__main__":

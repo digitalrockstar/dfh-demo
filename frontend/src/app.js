@@ -2,10 +2,11 @@ import { html, out, raw, esc } from "./ui.js";
 import { S, api, acts, applyTheme, logout, mount, toast } from "./core.js";
 import * as ct from "./page_ct.js";
 import * as sku from "./page_sku.js";
+import * as wastage from "./page_wastage.js";
 
 const NAV = [
   ["Overview", [["control-tower", "Control Tower", 1, 1], ["skus", "SKU master", 2, 1]]],
-  ["Operations", [["pos", "Store POS", "P", 0], ["inventory", "Inventory and warehouse", 4, 0], ["procurement", "Procurement and logistics", 3, 0], ["wastage", "Wastage and shrink", 5, 0], ["demand", "Demand and replenishment", 6, 0]]],
+  ["Operations", [["pos", "Store POS", "P", 0], ["inventory", "Inventory and warehouse", 4, 0], ["procurement", "Procurement and logistics", 3, 0], ["wastage", "Wastage and shrink", 5, 1], ["demand", "Demand and replenishment", 6, 0]]],
   ["Business", [["finance", "Finance and tax", 7, 0], ["customers", "Customers and WhatsApp", 8, 0], ["hr", "People", 9, 0], ["platform", "Platform", 10, 0]]]];
 const SOON = {
   pos: ["Offline-first billing for stores. Bills save on the device, sync when the connection returns, and keep GST invoice numbering continuous.", "Billing by weight and by pack, split payments, day close with cash count", "Returns within 10 days for defective or damaged items", "Sync health per store"],
@@ -60,6 +61,7 @@ async function route() {
   if (page === "skus") { if (!v.dataset.p || v.dataset.p !== "skus") { v.dataset.p = "skus"; await sku.render(v, param); } return; }
   v.dataset.p = page;
   if (page === "control-tower") return ct.render(v);
+  if (page === "wastage") return wastage.render(v);
   const d = SOON[param] || SOON.platform, label = NAV.flatMap(g => g[1]).find(x => x[0] === param);
   mount(v, html`<div class="head"><div><div class="eyebrow">${label ? "Module " + label[2] : ""}</div><h1>${label ? label[1] : "Coming soon"}</h1></div></div><div class="soonbox glass"><p>${d[0]}</p><ul>${d.slice(1).map(x => html`<li>${x}</li>`)}</ul><p class="small muted" style="margin-top:16px">Built after the modules above it. The plan and order are in the product book.</p></div>`);
 }
