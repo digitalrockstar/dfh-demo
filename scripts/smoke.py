@@ -26,6 +26,13 @@ try:
         pg.click("[data-act=settings]"); pg.click("[data-act=set-mode][data-v=dark]"); pg.fill("#gl", "80"); pg.dispatch_event("#gl", "input"); pg.click("[data-act=set-tone][data-v=ops]")
         pg.goto(f"http://127.0.0.1:{PORT}/#/control-tower"); pg.wait_for_selector("#exc .exc"); pg.wait_for_timeout(900)
         pg.screenshot(path=f"{OUT}/5_dark_ops_glass.png")
+        pg.goto(f"http://127.0.0.1:{PORT}/#/wastage"); pg.wait_for_selector("#wk .kpi .v"); pg.wait_for_selector("#wloc tbody tr"); pg.wait_for_selector("#wexp tbody tr"); pg.wait_for_selector("#went tbody tr"); pg.wait_for_timeout(800)
+        assert pg.locator("#wk .kpi").count() == 5 and pg.locator("#wtrend svg rect").count() >= 8 and pg.locator("#wreasons .r").count() >= 5
+        pg.screenshot(path=f"{OUT}/6_wastage.png", full_page=True)
+        pg.click("[data-act=w-kind][data-v=warehouse]"); pg.wait_for_timeout(900); assert "Hyderabad" in pg.inner_text("#wloc tbody tr >> nth=0")
+        pg.click("[data-act=w-win][data-v='15']"); pg.wait_for_timeout(700); pg.click("[data-act=w-sr][data-v=EXPIRY]"); pg.wait_for_timeout(700)
+        pg.click("[data-act=w-new]"); pg.wait_for_selector(".modal #wf-q"); pg.click("[data-act=w-save]"); pg.wait_for_selector(".toast.err"); pg.keyboard.press("Escape"); pg.wait_for_selector(".modal", state="detached")
+        pg.screenshot(path=f"{OUT}/7_wastage_filtered.png")
         pg.set_viewport_size({"width": 1440, "height": 900}); b.close()
     print("console errors:", errs or "none"); assert not errs, errs
     print("smoke ok")

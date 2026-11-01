@@ -1,5 +1,16 @@
 # UPDATES (newest first)
 
+## 2026-11-01 Module 5 Wastage and shrink
+- Seed (dfh/seed/wastage.py): 38.5k loss entries over 6 months across 500 stores and 20 warehouses, 10 reason codes, 285 batches with 5k stock rows and 811 markdown suggestions. This is a thin slice of batches and stock so near-expiry works before Module 4 exists; Module 4 will own them.
+- Planted findings: F1 Hyderabad Warehouse 1 shrink ramps from Aug (about 3x peers in the last 30 days, theft logged at night); F6 dried pineapple expiry in 30 kiosks (top store expiry loss, expired stock still on shelf).
+- API (dfh/wastage_api.py): summary, reasons, trend, location league (stores against COGS, warehouses at cost, outlier flag at 2x median), top SKUs (reason and kind filters), near-expiry at 15, 30 and 60 days with buckets, entries list, entry create, approve or reject, markdown accept or dismiss, options.
+- Rules: entries from Rs 2,000 at cost wait for approval; you cannot approve your own entry; batch entries deduct stock and a rejection puts it back; quantity limits; roles and store or warehouse scoping; every write is audited.
+- Screen: KPIs, loss trend, reasons, locations, top SKUs, near-expiry with markdown actions, recent entries with approve and reject, Record loss form.
+- Control Tower now shows two real exceptions from this module (warehouse shrink outlier, expiry risk). The placeholder for expiry risk is gone.
+- Tests: 10 new in tests/test_wastage.py (28 total), smoke extended (wastage page, filters, form validation), no console errors. Fixed a resize error in the Control Tower chart when leaving the page.
+- Open: photo upload (only a photo reference is stored), markdown acceptance does not change POS price yet (needs POS), vendor claim workflow, cap breach alerts for weighing and samples (caps are in wastage_reason but not enforced), stock deduction only for the seeded batches until Module 4.
+- Local test note: smoke needs Playwright matching the installed Chromium; `make setup` should run in a venv on newer Ubuntu (PEP 668).
+
 ## 2026-10-31 App shell, SKU master (Module 2), Control Tower v0 (Module 1)
 - Backend: FastAPI (dfh/app.py), DuckDB analytics over the Parquet history (dfh/analytics.py), signed-token login, role and store/warehouse scoping.
 - Frontend: no-build ES modules (frontend/src). Sidebar shell, settings popover (light, auto, dark; 5 tones including the new DFH tone sampled from the logo; glass slider), solid tables, glass panels, Escape closes drawers.
