@@ -8,7 +8,7 @@ Full product plan: `docs/DFH_Product_Plan_v1.pdf` (25 pages; source `docs/build_
 1. Module 2 SKU master (API, screens, import, price history).
 2. Module 10 Platform, thin slice (login, roles, audit, approvals) because every module needs it.
 3. Module 4 Inventory and warehouse (ledger, batches, FEFO, transfers, repack, indents, counts).
-4. Module 3 Procurement and logistics (price book, landed cost, PO, shipment tracker, GRN, three-way match).
+4. Module 3 Procurement and logistics (price book, landed cost, PO, shipment tracker, GRN, three-way match). DONE (GRN posts to the thin stock slice; Module 4 ledger takes over).
 5. POS foundation (PWA, IndexedDB, sync with idempotency keys, invoice series per device, day close, returns within 10 days for defective or damaged).
 6. Module 5 Wastage and shrink. DONE (built early on a thin batch and stock slice; Module 4 to take over batches).
 7. Module 7 Finance and tax reconciliation (assumed GST rates, GSP on hold).

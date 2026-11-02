@@ -39,6 +39,13 @@ try:
         pg.select_option("#dscope", "category|GFT"); pg.wait_for_timeout(900); pg.click("[data-act=d-urg][data-v=critical]"); pg.wait_for_timeout(700); assert pg.locator("#dsug tbody tr").count() >= 1
         n0 = pg.locator("#dsug [data-act=d-dec][data-v=approve]").count(); pg.click("#dsug [data-act=d-dec][data-v=approve] >> nth=0"); pg.wait_for_selector(".toast"); pg.wait_for_timeout(700)
         pg.screenshot(path=f"{OUT}/9_demand_filtered.png")
+        pg.goto(f"http://127.0.0.1:{PORT}/#/procurement"); pg.wait_for_selector("#pk .kpi .v"); [pg.wait_for_selector(f"{i} tbody tr") for i in ("#psh", "#ppo", "#ppb", "#pvd", "#pmt")]; pg.wait_for_timeout(500)
+        assert pg.locator("#pk .kpi").count() == 5
+        pg.screenshot(path=f"{OUT}/10_procurement.png", full_page=True)
+        pg.click("[data-act=p-sv][data-v=late]"); pg.wait_for_timeout(800); assert pg.locator("#psh tbody tr").count() >= 1
+        pg.click("#ppo tbody tr.click >> nth=0"); pg.wait_for_selector(".drawer .stats"); pg.wait_for_timeout(500); pg.screenshot(path=f"{OUT}/11_po_drawer.png"); pg.keyboard.press("Escape"); pg.wait_for_selector(".drawer", state="detached")
+        pg.click("[data-act=p-creep][data-v=creep]"); pg.wait_for_timeout(800); pg.click("#ppb tbody tr.click >> nth=0"); pg.wait_for_selector(".drawer .stack"); pg.wait_for_timeout(500); pg.screenshot(path=f"{OUT}/12_compare.png"); pg.keyboard.press("Escape"); pg.wait_for_selector(".drawer", state="detached")
+        pg.click("[data-act=p-mv][data-v=ready]"); pg.wait_for_timeout(800); pg.screenshot(path=f"{OUT}/13_procurement_match.png")
         pg.set_viewport_size({"width": 1440, "height": 900}); b.close()
     print("console errors:", errs or "none"); assert not errs, errs
     print("smoke ok")
