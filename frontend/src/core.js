@@ -15,7 +15,7 @@ export function applyTheme() {
   r.dataset.mode = dark ? "dark" : "light"; r.dataset.tone = t.tone; r.style.setProperty("--glass", t.glass);
   localStorage.setItem("dfh_theme", JSON.stringify(t));
 }
-export function logout() { localStorage.removeItem("dfh_token"); S.token = null; S.user = null; location.hash = ""; location.reload(); }
+export function logout() { localStorage.removeItem("dfh_token"); localStorage.removeItem("dfh_user"); S.token = null; S.user = null; location.hash = ""; location.reload(); }
 export function toast(msg, err = false) {
   const d = document.createElement("div"); d.className = "toast glass" + (err ? " err" : ""); d.textContent = msg; document.body.append(d); setTimeout(() => d.remove(), 3200);
 }

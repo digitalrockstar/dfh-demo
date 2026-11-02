@@ -10,7 +10,7 @@ try:
         except Exception: time.sleep(0.5)
     errs = []
     with sync_playwright() as p:
-        b = p.chromium.launch(executable_path=os.getenv("CHROME") or None); pg = b.new_page(viewport={"width": 1440, "height": 900})
+        b = p.chromium.launch(executable_path=os.getenv("CHROME") or None, args=os.getenv("CHROME_ARGS", "").split()); pg = b.new_page(viewport={"width": 1440, "height": 900})
         pg.on("console", lambda m: errs.append(m.text) if m.type == "error" and "422" not in m.text else None); pg.on("pageerror", lambda e: errs.append(str(e)))
         pg.goto(f"http://127.0.0.1:{PORT}/"); pg.wait_for_selector("#u"); pg.screenshot(path=f"{OUT}/1_login.png")
         pg.click("[data-act=do-login]"); pg.wait_for_selector(".kpi .v"); pg.wait_for_selector("#league tbody tr"); pg.wait_for_selector("#exc .exc"); pg.wait_for_timeout(700)
