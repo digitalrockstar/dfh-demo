@@ -10,3 +10,6 @@ run:
 
 smoke:
 	python scripts/smoke.py
+
+smoke-pos:
+	python scripts/smoke_pos.py
