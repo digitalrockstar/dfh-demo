@@ -5,6 +5,7 @@ from typing import Optional, List, Dict
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
+from . import stockpost
 from .procurement_costs import Rates, components, line_minor, weight_kg, allocate, match, FLOW, STAGE, COMPONENTS
 
 VIEW = {"ceo", "finance", "admin", "procurement", "warehouse"}
@@ -372,6 +373,7 @@ def attach(app, ctx):
                 if acc > 0:
                     bid = c.execute(text("select coalesce(max(id), 0) + 1 from batch")).scalar()
                     c.execute(text("insert into batch(id, batch_no, sku_id, vendor_id, received_on, mfg_date, expiry_date, unit_cost_paise, source_doc_type, source_doc_id) values (:i,:n,:s,:v,:r,null,:e,:u,'grn',:g)"), dict(i=bid, n=f"{gno}-{l['sku_id']}", s=l["sku_id"], v=p["vendor_id"], r=TODAY, e=ex, u=uc, g=gno))
+                if bid: stockpost.post(c, NOW, p["dest_location_id"], l["sku_id"], bid, acc, "grn", "grn", gno, u["id"])
                 c.execute(text("insert into grn_line(grn_id, sku_id, batch_id, qty_received, qty_accepted, qty_rejected, reject_reason, unit_cost_paise) values (:g,:s,:b,:r,:a,:j,:rs,:u)"), dict(g=gid, s=l["sku_id"], b=bid, r=x.qty_received, a=acc, j=x.qty_rejected, rs=(x.reject_reason or None) if x.qty_rejected else None, u=uc))
                 if x.qty_rejected:
                     c.execute(text("insert into debit_note(vendor_id, grn_id, amount_paise, reason, created_at) values (:v,:g,:a,:r,:t)"), dict(v=p["vendor_id"], g=gid, a=inr(line_minor(x.qty_rejected, l["price_minor"], l["base_uom"]), p["fx_rate"]), r=f"Rejected on receipt: {x.reject_reason}", t=NOW))

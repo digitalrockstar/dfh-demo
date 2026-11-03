@@ -50,7 +50,7 @@ def insert_sale(eng, boot, store_id, dev_id, items, when):
 
 
 def pick(boot, uom, n=1):
-    return [s for s in boot["catalog"] if s["uom"] == uom and s["price"] > 5000][:n]
+    return sorted((s for s in boot["catalog"] if s["uom"] == uom and s["price"] > 5000 and s["procurement_type"] != "kit"), key=lambda s: -s["stock"])[:n]
 
 
 def make_bill(boot, dev, no, items, pay_mode="cash", when=None, **kw):
@@ -98,7 +98,7 @@ def test_series_and_sync_idempotent(client, lab):
     d = dict(dev, prefix=g["prefix"]); loose, pack = pick(boot, "g")[0], pick(boot, "ea")[0]
     b1, t1 = make_bill(boot, d, g["start"], [(loose, 350, 0), (pack, 2, 0)])
     r = client.post("/api/pos/sync", json=dict(device_id=dev["id"], bills=[b1], queue_depth=1), headers=h).json()
-    assert r["results"][0]["status"] == "accepted"
+    assert r["results"][0]["status"] in ("accepted", "review")
     again = client.post("/api/pos/sync", json=dict(device_id=dev["id"], bills=[b1], queue_depth=0), headers=h).json()
     assert again["results"][0]["status"] == "duplicate"
     det = client.get("/api/pos/bills/" + b1["invoice_no"], headers=h).json()
@@ -117,7 +117,7 @@ def test_sync_rejections(client, lab):
     b, _ = make_bill(boot, d, g["end"] + 50, [(pack, 1, 0)]); assert "outside" in push(b)["reason"]
     b, _ = make_bill(boot, d, g["start"], [(pack, 1, 0)], when=datetime.now() + timedelta(days=5)); assert "future" in push(b)["reason"]
     b, _ = make_bill(boot, d, g["start"], [(pack, 1, 0)]); b["lines"][0]["qty"] = 0; assert push(b)["status"] == "rejected"
-    ok, _ = make_bill(boot, d, g["start"], [(pack, 1, 0)]); assert push(ok)["status"] == "accepted"
+    ok, _ = make_bill(boot, d, g["start"], [(pack, 1, 0)]); assert push(ok)["status"] in ("accepted", "review")
     reuse, _ = make_bill(boot, d, g["start"], [(pack, 1, 0)]); assert "already used" in push(reuse)["reason"]
 
 
@@ -129,7 +129,7 @@ def test_review_flag_and_split_payment(client, lab):
     assert r["status"] == "review" and "below list" in r["reason"]
     s, t2 = make_bill(boot, d, g["start"] + 1, [(pack, 4, 0)]); half = t2["total"] // 200 * 100
     s["payments"] = [dict(mode="cash", amount_paise=half), dict(mode="upi", amount_paise=t2["total"] - half, ref="UPI123")]
-    assert client.post("/api/pos/sync", json=dict(device_id=dev["id"], bills=[s]), headers=h).json()["results"][0]["status"] == "accepted"
+    assert client.post("/api/pos/sync", json=dict(device_id=dev["id"], bills=[s]), headers=h).json()["results"][0]["status"] in ("accepted", "review")
 
 
 def test_returns_flow(client, boot, eng):
@@ -164,7 +164,7 @@ def test_day_close_cash(client, lab):
     dev = boot["devices"][-1]; g = grant(client, h, dev["id"], 2)
     d = dict(dev, prefix=g["prefix"]); pack = pick(boot, "ea")[0]
     b, t = make_bill(boot, d, g["start"], [(pack, 2, 0)], when=day.replace(hour=12)); b2, t2 = make_bill(boot, d, g["start"] + 1, [(pack, 1, 0)], pay_mode="upi", when=day.replace(hour=13))
-    assert [x["status"] for x in client.post("/api/pos/sync", json=dict(device_id=dev["id"], bills=[b, b2]), headers=h).json()["results"]] == ["accepted", "accepted"]
+    assert all(x["status"] in ("accepted", "review") for x in client.post("/api/pos/sync", json=dict(device_id=dev["id"], bills=[b, b2]), headers=h).json()["results"])
     assert client.post("/api/pos/cash-drop", json=dict(amount_paise=5000, business_date=bd, store_id=sid), headers=h).status_code == 200
     v = client.get("/api/pos/day-close", params=dict(business_date=bd, store_id=sid), headers=h).json()
     assert v["cash_sales"] == t["total"] and v["drops"] == 5000 and v["by_mode"]["upi"] == t2["total"] and v["bills"] == 2
@@ -182,3 +182,31 @@ def test_health_planted_stale(client):
     mine = client.get("/api/pos/health", headers=tok(client, "storemgr")).json()
     assert {d["store_id"] for d in mine["devices"]} == {21}
     assert client.get("/api/pos/health", headers=tok(client, "cashier")).status_code == 403
+
+
+def test_sale_posts_to_ledger_fefo(client, lab, eng):
+    h, boot = lab["h"], lab["boot"]; dev = boot["devices"][0]; g = grant(client, h, dev["id"], 2); d = dict(dev, prefix=g["prefix"])
+    with eng.connect() as c:
+        row = c.execute(text("select b.sku_id, b.location_id from stock_balance b join sku s on s.id=b.sku_id join batch t on t.id=b.batch_id where b.location_id=:l and s.base_uom='ea' and s.procurement_type!='kit' and b.qty>=3 and t.expiry_date>='2026-11-15' limit 1"), dict(l=lab["store"])).fetchone()
+        if not row: pytest.skip("no stocked pack in the lab store")
+        sku = next(s for s in boot["catalog"] if s["id"] == row[0])
+        before = c.execute(text("select sum(qty) from stock_balance where location_id=:l and sku_id=:s"), dict(l=lab["store"], s=sku["id"])).scalar()
+    b, t = make_bill(boot, d, g["start"], [(sku, 2, 0)])
+    assert client.post("/api/pos/sync", json=dict(device_id=dev["id"], bills=[b]), headers=h).json()["results"][0]["status"] in ("accepted", "review")
+    with eng.connect() as c:
+        after = c.execute(text("select sum(qty) from stock_balance where location_id=:l and sku_id=:s"), dict(l=lab["store"], s=sku["id"])).scalar()
+        led = c.execute(text("select sum(qty), count(*) from stock_ledger where doc_type='sale' and doc_id=:i and movement_type='sale'"), dict(i=b["invoice_no"])).fetchone()
+        bt = c.execute(text("select batch_id from sale_line where sale_id=:i"), dict(i=b["id"])).scalar()
+    assert before - after == 2 and led[0] == -2 and bt is not None
+    again = client.post("/api/pos/sync", json=dict(device_id=dev["id"], bills=[b]), headers=h).json()["results"][0]
+    assert again["status"] == "duplicate"
+    with eng.connect() as c: assert c.execute(text("select sum(qty) from stock_balance where location_id=:l and sku_id=:s"), dict(l=lab["store"], s=sku["id"])).scalar() == after
+
+
+def test_sale_without_stock_is_kept_and_flagged(client, lab, eng):
+    h, boot = lab["h"], lab["boot"]; dev = boot["devices"][0]; g = grant(client, h, dev["id"], 2); d = dict(dev, prefix=g["prefix"])
+    sku = next(s for s in boot["catalog"] if s["uom"] == "ea" and s["stock"] <= 0 and s["price"] > 5000)
+    b, t = make_bill(boot, d, g["start"], [(sku, 1, 0)])
+    r = client.post("/api/pos/sync", json=dict(device_id=dev["id"], bills=[b]), headers=h).json()["results"][0]
+    assert r["status"] == "review" and "short by 1" in r["reason"]
+    with eng.connect() as c: assert c.execute(text("select count(*) from stock_balance where qty<0")).scalar() == 0

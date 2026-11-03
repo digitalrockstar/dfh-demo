@@ -4,7 +4,7 @@ from sqlalchemy import insert
 from ..schema import metadata
 from ..db import get_engine
 from .masters import build_masters
-from . import history, wastage, procurement, pos
+from . import history, inventory, wastage, procurement, pos
 from ..demand import model as demand
 
 
@@ -34,6 +34,7 @@ def main():
     if not a.no_history:
         t1 = time.time()
         print("history:", history.run(eng, a.months, a.seed, a.data), f"{time.time() - t1:.1f}s")
+        t2 = time.time(); print("inventory:", inventory.run(eng, a.seed), f"{time.time() - t2:.1f}s")
         print("wastage:", wastage.run(eng, a.seed, a.data))
         print("demand:", demand.run(eng, a.data, a.seed))
         print("procurement:", procurement.run(eng, a.seed, a.data))

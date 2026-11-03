@@ -240,6 +240,9 @@ def create_app(db_url=None, data_dir=None, serve_frontend=True):
     def ct_filters(u=Depends(ct)):
         return dict(regions=[r["region"] for r in many("select distinct region from location where type='store' order by region")], cities=[r["city"] for r in many("select distinct city from location where type='store' order by city")])
 
+    from .inventory import register as register_inventory
+    register_inventory(app, engine, one, many, me, need, audit, NOW)
+
     if serve_frontend:
         web = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
         app.mount("/", StaticFiles(directory=web, html=True), name="web")

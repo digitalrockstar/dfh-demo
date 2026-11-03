@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import text
 from .pos_calc import line_calc, bill_calc
+from . import stockpost
 
 BILL = {"cashier", "store_manager", "ceo", "admin"}
 MANAGE = {"store_manager", "ceo", "admin"}
@@ -89,6 +90,8 @@ def attach(app, ctx):
     me, need, many, one, audit, engine, an, NOW = (ctx[k] for k in ("me", "need", "many", "one", "audit", "engine", "an", "NOW"))
     clock = lambda: max(datetime.now().replace(microsecond=0), NOW)
 
+    many_rows = lambda q, **k: [tuple(x.values()) for x in many(q, **k)]
+
     def policy_days():
         r = one("select value from tax_assumption where assumption_key='return_policy_days'")
         return int(r["value"]) if r else 10
@@ -116,11 +119,13 @@ def attach(app, ctx):
         sid = store_of(u, store_id)
         store = one("select id, code, name, city from location where id=:s", s=sid)
         devices = many("select d.id, d.code, d.last_seen_at, s.prefix, s.fy, s.reserved_to, s.next_no from device d join invoice_series s on s.device_id=d.id where d.store_id=:s order by d.id", s=sid)
-        cat = many("select s.id, s.code, s.barcode, s.name, s.base_uom uom, s.pack_g, s.mrp_paise, s.price_per_kg_paise, s.hsn, c.name cat, "
+        cat = many("select s.id, s.code, s.barcode, s.name, s.base_uom uom, s.pack_g, s.mrp_paise, s.price_per_kg_paise, s.hsn, s.procurement_type, c.name cat, "
                    "case when s.base_uom='g' then coalesce(t.rate_loose_pct, 5.0) else coalesce(t.rate_packed_pct, 5.0) end tax_pct "
                    "from sku s join product p on p.id=s.product_id join category c on c.id=p.category_id left join tax_rate t on t.hsn=s.hsn "
                    "where s.status='active' order by c.name, s.name")
+        onhand = {r[0]: r[1] for r in many_rows("select sku_id, sum(qty) from stock_balance where location_id=:s group by sku_id", s=sid)}
         for r in cat:
+            r["stock"] = onhand.get(r["id"], 0)
             r["price"] = r.pop("price_per_kg_paise") if r["uom"] == "g" else r["mrp_paise"]; r.pop("mrp_paise")
         stores = many("select distinct l.id, l.code, l.name from location l join device d on d.store_id=l.id order by l.code") if u["scope_type"] == "all" else None
         note = one("select value from tax_assumption where assumption_key='gst_rates'")
@@ -178,14 +183,23 @@ def attach(app, ctx):
                     c.execute(text("insert into customer(code, phone, city, created_at, first_store_id, consent_wa, consent_at, loyalty_points) values (:c,:p,:ci,:t,:s,:w,:ct,0)"),
                               dict(c="W" + ph, p=ph, ci=None, t=now, s=d["store_id"], w=b.consent_wa, ct=now if b.consent_wa else None))
                     cust = c.execute(text("select id from customer where phone=:p"), dict(p=ph)).scalar()
+        # stock: sell FEFO from the store balance, kits come out as their components. A shortfall flags the bill, it does not refuse it.
+        today = str(now.date())
+        for l in lines:
+            parts = c.execute(text("select component_sku_id, qty from kit_bom where kit_sku_id=:k"), dict(k=l["sku_id"])).fetchall() or [(l["sku_id"], 1)]
+            l["batch"] = None
+            for comp, per in parts:
+                used, miss = stockpost.take_fefo(c, now, d["store_id"], comp, per * l["qty"], today, "sale", b.invoice_no, u["id"], d["id"])
+                if used and l["batch"] is None: l["batch"] = used[0][0]
+                if miss: flags.append(f"{cat[l['sku_id']]['code']} short by {miss} in store stock")
         status = "review" if flags else "paid"
         c.execute(text("insert into sale(id, store_id, device_id, invoice_no, business_date, created_at_device, received_at, cashier_id, customer_id, gross_paise, discount_paise, tax_paise, net_paise, round_off_paise, status, void_reason, price_list_id, idem_key, currency) "
                        "values (:id,:st,:dv,:inv,:bd,:cd,:rc,:cu,:cs,:g,:di,:tx,:nt,:ro,:ss,:vr,null,:ik,'INR')"),
                   dict(id=b.id, st=d["store_id"], dv=d["id"], inv=b.invoice_no, bd=created.date(), cd=created, rc=now, cu=u["id"], cs=cust, g=t["gross"], di=t["discount"], tx=t["tax"], nt=t["total"],
                        ro=t["round_off"], ss=status, vr="; ".join(flags) or None, ik=b.idem_key))
         for l in lines:
-            c.execute(text("insert into sale_line(sale_id, sku_id, batch_id, qty, unit_price_paise, discount_paise, tax_rate, tax_paise, net_paise, hsn) values (:s,:k,null,:q,:u,:d,:r,:t,:n,:h)"),
-                      dict(s=b.id, k=l["sku_id"], q=l["qty"], u=l["unit"], d=l["discount"], r=l["rate"], t=l["tax"], n=l["net"], h=l["hsn"]))
+            c.execute(text("insert into sale_line(sale_id, sku_id, batch_id, qty, unit_price_paise, discount_paise, tax_rate, tax_paise, net_paise, hsn) values (:s,:k,:bt,:q,:u,:d,:r,:t,:n,:h)"),
+                      dict(s=b.id, bt=l["batch"], k=l["sku_id"], q=l["qty"], u=l["unit"], d=l["discount"], r=l["rate"], t=l["tax"], n=l["net"], h=l["hsn"]))
         for p in b.payments:
             c.execute(text("insert into payment(sale_id, mode, amount_paise, ref, status) values (:s,:m,:a,:r,'ok')"), dict(s=b.id, m=p.mode, a=p.amount_paise, r=p.ref))
         late = c.execute(text("select 1 from day_close where store_id=:s and business_date=:d and status!='open'"), dict(s=d["store_id"], d=created.date())).fetchone()

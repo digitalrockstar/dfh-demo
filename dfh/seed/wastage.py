@@ -1,5 +1,4 @@
-"""Module 5 seed: wastage entries, a small batch and stock set for near-expiry, markdown suggestions.
-Module 4 (inventory) will own batches later; these rows are a thin slice so wastage can be shown end to end."""
+"""Module 5 seed: wastage entries and markdown suggestions. Batches and stock come from the Module 4 seed, which must run first."""
 import random
 from datetime import datetime, date, timedelta
 import duckdb
@@ -37,33 +36,15 @@ def run(engine, seed=42, outdir="data"):
     stores = [l for l in locs if l["type"] == "store"]; whs = [l for l in locs if l["type"] == "warehouse"]
     cogs = {r[0]: r[1] for r in duckdb.connect().execute(f"select store_id, sum(cogs_paise) from read_parquet('{outdir}/sales_daily/**/*.parquet', hive_partitioning=true) group by 1").fetchall()}
 
-    # ---- batches and stock (thin slice for near-expiry) ----
-    chosen = [byid[i] for i in pine if i in byid] + rng.sample([s for s in active if s["id"] not in pine and (s["shelf_life_days"] or 999) <= 365], 60)
-    batches, bal, bid = [], {}, 0
-    for s in chosen:
-        ages = [105, 80, 70, 40, 15] if s["id"] in pine else [150, 110, 60, 20]
-        for a in ages:
-            bid += 1; rec = (NOW - timedelta(days=a)).date(); life = s["shelf_life_days"] or 180
-            batches.append(dict(id=bid, batch_no=f"B{s['code']}-{rec:%y%m%d}", sku_id=s["id"], vendor_id=vend.get(s["bulk_sku_id"] or s["id"]) or 1, received_on=rec, mfg_date=rec - timedelta(days=10),
-                                expiry_date=rec + timedelta(days=life), mrp_paise=s["mrp_paise"], unit_cost_paise=s["std_cost_paise"], source_doc_type="seed", source_doc_id="m5"))
-    bysku = {}
-    for b in batches: bysku.setdefault(b["sku_id"], []).append(b)
-    big = lambda s, lo, hi: rng.randint(lo, hi) * (1000 if s["base_uom"] == "g" else 1)
-    for b in batches:
-        s = byid[b["sku_id"]]; left = (b["expiry_date"] - NOW.date()).days
-        if s["id"] in pine and s["base_uom"] != "g":
-            for st in kiosks:
-                if rng.random() < (0.9 if left < 35 else 0.4): bal[(st, s["id"], b["id"])] = rng.randint(3, 12) if left > 0 else rng.randint(1, 4)
-        elif left >= -3:
-            for l in rng.sample(whs, 4): bal[(l["id"], s["id"], b["id"])] = big(s, 2, 12) if s["base_uom"] == "g" else rng.randint(5, 60)
-            for l in rng.sample(stores, 14): bal[(l["id"], s["id"], b["id"])] = big(s, 1, 3) if s["base_uom"] == "g" else rng.randint(1, 8)
-    balrows = [dict(location_id=k[0], sku_id=k[1], batch_id=k[2], qty=q, updated_at=NOW) for k, q in bal.items()]
-    bexp = {b["id"]: b["expiry_date"] for b in batches}; store_ids = {l["id"] for l in stores}
-    marks = []
-    for (loc, sid, b), q in bal.items():
-        left = (bexp[b] - NOW.date()).days
-        if 0 <= left <= 30 and loc in store_ids:
-            marks.append(dict(location_id=loc, batch_id=b, suggested_pct=40.0 if left <= 7 else 30.0 if left <= 15 else 20.0, reason=f"{left} days to expiry, {q} in stock", created_at=NOW, status="open"))
+    # ---- batches and stock come from Module 4; markdown suggestions read the near-expiry store balances ----
+    with engine.connect() as c:
+        bysku = {}
+        for r in c.execute(text("select id, sku_id from batch")): bysku.setdefault(r[1], []).append({"id": r[0]})
+        near = c.execute(text("select b.location_id, b.batch_id, b.qty, cast(julianday(t.expiry_date) - julianday(:d) as integer) from stock_balance b join batch t on t.id=b.batch_id join location l on l.id=b.location_id "
+                              "where l.type='store' and b.qty>0 and t.expiry_date>=:d and t.expiry_date<=date(:d, '+30 days') order by b.location_id, b.batch_id"), dict(d=str(NOW.date()))).fetchall()
+    batches, balrows, marks = [], [], []
+    for loc, b, q, left in near:
+        marks.append(dict(location_id=loc, batch_id=b, suggested_pct=40.0 if left <= 7 else 30.0 if left <= 15 else 20.0, reason=f"{left} days to expiry, {q} in stock", created_at=NOW, status="open"))
 
     # ---- wastage entries ----
     ent = []
@@ -108,12 +89,12 @@ def run(engine, seed=42, outdir="data"):
                 mk(l["id"], when(True), r, s["id"], q, True)
     pset = [byid[i] for i in pine if i in byid and byid[i]["base_uom"] != "g"]
     for st in kiosks:
-        for _ in range(rng.randint(4, 9)):
+        for _ in range(rng.randint(7, 12)):
             ts = START + timedelta(days=rng.randint(84, 183), hours=rng.randint(9, 21), minutes=rng.randint(0, 59))
-            s = rng.choice(pset); mk(st, min(ts, NOW - timedelta(hours=2)), "EXPIRY", s["id"], rng.randint(2, 7), False)
+            s = rng.choice(pset); mk(st, min(ts, NOW - timedelta(hours=2)), "EXPIRY", s["id"], rng.randint(3, 8), False)
 
     assert all(e["reason"] in reasons for e in ent)
     with engine.begin() as c:
-        for name, rows in (("batch", batches), ("stock_balance", balrows), ("wastage_entry", ent), ("markdown_suggestion", marks)):
+        for name, rows in (("wastage_entry", ent), ("markdown_suggestion", marks)):
             for i in range(0, len(rows), 5000): c.execute(insert(T[name]), rows[i:i + 5000])
     return dict(batches=len(batches), stock_rows=len(balrows), entries=len(ent), markdowns=len(marks))
