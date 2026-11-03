@@ -48,7 +48,7 @@ landed_cost: shipment_id i fk=shipment.id I; component s16; amount_paise b; curr
 batch: batch_no s40 U; sku_id i fk=sku.id I; vendor_id i N fk=vendor.id; received_on d; mfg_date d N; expiry_date d I; mrp_paise b N; unit_cost_paise b; source_doc_type s20; source_doc_id s40
 grn: grn_no s30 U; po_id i N fk=purchase_order.id; shipment_id i N fk=shipment.id; location_id i fk=location.id; received_at dt; status s12; received_by i N
 grn_line: grn_id i fk=grn.id I; sku_id i fk=sku.id; batch_id i N fk=batch.id; qty_received b; qty_accepted b; qty_rejected b; reject_reason s40 N; unit_cost_paise b
-vendor_invoice: vendor_id i fk=vendor.id I; po_id i N fk=purchase_order.id; inv_no s40; inv_date d; amount_minor b; currency s3; status s12; due_date d
+vendor_invoice: vendor_id i fk=vendor.id I; po_id i N fk=purchase_order.id; inv_no s40; inv_date d; amount_minor b; currency s3; status s12; due_date d; note t N
 vendor_payment: vendor_id i fk=vendor.id I; invoice_id i N fk=vendor_invoice.id; paid_on d; amount_minor b; mode s12; fx_rate f
 debit_note: vendor_id i fk=vendor.id; grn_id i N fk=grn.id; amount_paise b; reason s60; created_at dt
 stock_ledger: ts dt; location_id i fk=location.id; bin_id i N fk=location_bin.id; sku_id i fk=sku.id; batch_id i N fk=batch.id; qty b; movement_type s20; doc_type s20; doc_id s40; unit_cost_paise b N; user_id i N; device_id i N
@@ -111,7 +111,7 @@ announcement: title s120; body t; created_at dt; audience s30
 ## analytics
 forecast_run: run_at dt; method s30; horizon_weeks i; wape f N; notes t N
 forecast: run_id i fk=forecast_run.id I; store_id i fk=location.id; sku_id i fk=sku.id I; week_start d; qty_forecast f; lower f; upper f; value_paise b
-reorder_suggestion: run_id i N fk=forecast_run.id; location_id i fk=location.id I; sku_id i fk=sku.id I; vendor_id i N fk=vendor.id; suggested_qty b; approved_qty b N; unit_cost_paise f; value_paise b; on_hand b; on_order b; need_lead b; need_cycle b; cover_days f; lead_time_days i; moq b; urgency s8 I; order_by d; reason s200; status s10 I; created_at dt; decided_by i N; decided_at dt N
+reorder_suggestion: run_id i N fk=forecast_run.id; location_id i fk=location.id I; sku_id i fk=sku.id I; vendor_id i N fk=vendor.id; suggested_qty b; approved_qty b N; unit_cost_paise f; value_paise b; on_hand b; on_order b; need_lead b; need_cycle b; cover_days f; lead_time_days i; moq b; urgency s8 I; order_by d; reason s200; status s10 I; created_at dt; decided_by i N; decided_at dt N; po_id i N fk=purchase_order.id
 stock_position: location_id i P fk=location.id; sku_id i P fk=sku.id; on_hand b; on_order b; eta_days i; as_of d
 demand_requirement: run_id i fk=forecast_run.id; location_id i fk=location.id I; sku_id i fk=sku.id I; need_qty b; base_qty b; kit_qty b; need_lead b
 kpi_snapshot: date d I; kpi s40 I; dim_type s12; dim_id i N; value f
