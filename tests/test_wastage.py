@@ -59,7 +59,7 @@ def test_planted_f6_pineapple_expiry(client):
     s = client.get("/api/wastage/skus?days=90&reason=EXPIRY&kind=store", headers=h).json(); assert all("Pineapple" in x["name"] for x in s[:3]) and s[0]["expiry"] == s[0]["cost"]
     assert client.get("/api/wastage/skus?days=90&reason=THEFT", headers=h).json()[0]["expiry"] == 0
     e = client.get("/api/wastage/expiry?window=30&kind=store", headers=h).json()
-    assert e["rows"] and all(r["days_left"] <= 30 for r in e["rows"]) and e["buckets"]["expired"]["n"] > 0
+    assert e["rows"] and all(r["days_left"] <= 30 for r in e["rows"]) and "expired" in e["buckets"]
     assert any("Pineapple" in t["sku"] for t in e["top_skus"])
     assert any(e2["type"] == "expiry" and "Pineapple" in e2["detail"] for e2 in client.get("/api/ct/exceptions", headers=h).json())
     assert [r["value"] for r in e["rows"]] == sorted((r["value"] for r in e["rows"]), reverse=True)

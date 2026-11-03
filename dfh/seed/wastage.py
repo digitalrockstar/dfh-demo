@@ -123,7 +123,7 @@ def run(engine, seed=42, outdir="data"):
     for st in kiosks:
         for _ in range(rng.randint(4, 9)):
             ts = START + timedelta(days=rng.randint(84, 183), hours=rng.randint(9, 21), minutes=rng.randint(0, 59))
-            s = rng.choice(pset); mk(st, min(ts, NOW - timedelta(hours=2)), "EXPIRY", s["id"], rng.randint(2, 7), False)
+            s = rng.choice(pset); mk(st, min(ts, NOW - timedelta(hours=2)), "EXPIRY", s["id"], rng.randint(4, 12), False)
 
     assert all(e["reason"] in reasons for e in ent)
     with engine.begin() as c:
