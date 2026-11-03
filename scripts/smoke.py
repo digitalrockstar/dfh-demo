@@ -50,6 +50,13 @@ try:
         pg.click("#ppo tbody tr.click >> nth=0"); pg.wait_for_selector(".drawer .stats"); pg.wait_for_timeout(500); pg.screenshot(path=f"{OUT}/11_po_drawer.png"); pg.keyboard.press("Escape"); pg.wait_for_selector(".drawer", state="detached")
         pg.click("[data-act=p-creep][data-v=creep]"); pg.wait_for_timeout(800); pg.click("#ppb tbody tr.click >> nth=0"); pg.wait_for_selector(".drawer .stack"); pg.wait_for_timeout(500); pg.screenshot(path=f"{OUT}/12_compare.png"); pg.keyboard.press("Escape"); pg.wait_for_selector(".drawer", state="detached")
         pg.click("[data-act=p-mv][data-v=ready]"); pg.wait_for_timeout(800); pg.screenshot(path=f"{OUT}/13_procurement_match.png")
+        pg.goto(f"http://127.0.0.1:{PORT}/#/finance"); pg.wait_for_selector("#fclose .tbl tbody tr"); pg.wait_for_timeout(500); assert pg.locator(".kpi").count() == 5
+        pg.screenshot(path=f"{OUT}/14_finance_close.png", full_page=True)
+        pg.click("[data-act=f-tab][data-v=cash]"); pg.wait_for_selector("#frecon .tbl tbody tr"); pg.click("[data-act=f-flag][data-v='1']"); pg.wait_for_selector("tr[data-act=f-store]"); assert pg.locator("tr[data-act=f-store]").count() == 1
+        pg.click("tr[data-act=f-store]"); pg.wait_for_selector(".drawer .tbl"); pg.screenshot(path=f"{OUT}/15_finance_cash.png"); pg.keyboard.press("Escape"); pg.wait_for_selector(".drawer", state="detached")
+        pg.click("[data-act=f-res] >> nth=0"); pg.wait_for_selector("#fnote"); pg.click(".modal [data-act=f-close] >> nth=0"); pg.wait_for_selector(".modal", state="detached")
+        pg.click("[data-act=f-tab][data-v=gst]"); pg.wait_for_selector("tr[data-act=f-gd]"); pg.click("tr[data-act=f-gd][data-p='2026-09']"); pg.wait_for_selector(".drawer .tbl"); pg.screenshot(path=f"{OUT}/16_finance_gst.png"); pg.keyboard.press("Escape")
+        pg.click("[data-act=f-tab][data-v=payables]"); pg.wait_for_selector("#fbody .bars"); pg.click("[data-act=f-tab][data-v=journal]"); pg.wait_for_selector("tr[data-act=f-jv]"); pg.click("tr[data-act=f-jv] >> nth=0"); pg.wait_for_selector(".modal .tbl"); pg.screenshot(path=f"{OUT}/17_finance_journal.png"); pg.keyboard.press("Escape")
         pg.set_viewport_size({"width": 1440, "height": 900}); b.close()
     print("console errors:", errs or "none"); assert not errs, errs
     print("smoke ok")

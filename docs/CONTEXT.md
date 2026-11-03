@@ -20,8 +20,7 @@ cost varies by vendor and month). Return policy: 10 days, only if defective or d
 - Writing style for Akshay: brutally honest, confident, humble, no em dashes, no arrows, not robotic, plain vocabulary.
 - Token use: frugal. Work locally, report only on completion.
 
-**Status:** foundation, app shell, SKU master, Control Tower v0, Module 3 Procurement and logistics, Module 5 Wastage and shrink, Module 6 Demand and replenishment and the offline-first Store POS are built and tested (see UPDATES.md). Module 6 runs on a modelled stock position until Module 4 exists. **Next:** Module 4 Inventory and warehouse (ledger, batches, FEFO, transfers, repack, indents, counts; it will also take stock deduction from POS sales), then Finance, then Control Tower full.
-**Status:** foundation, app shell, SKU master, Control Tower v0 and Module 4 Inventory and warehouse are built and tested (see UPDATES.md). **Next:** Procurement and logistics (Module 3, needs GRN to link into the ledger), then POS, Wastage, Finance, then Control Tower full.
+**Status:** foundation, app shell, SKU master, Control Tower v0, Modules 3, 4, 5, 6 and 7 and the offline-first Store POS are built and tested (see UPDATES.md). Module 4 owns batches and stock; wastage and demand read from it. Module 7 runs on a modelled tender split because POS holds only demo bills. **Next:** Control Tower full, then Module 8 Customers and WhatsApp and Module 9 People. Browser smoke needs Chromium, which was not available in the last two sessions.
 
 **Brand:** logo colors sampled as warm near-black (about #1A0E0E) and amber (about #E4A80C); DFH tone is the default theme.
 **Bootstrap in a new session:** `git clone`, `make setup`, `make test`, `make run`. Read docs/UPDATES.md first.
