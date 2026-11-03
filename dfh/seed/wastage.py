@@ -37,33 +37,46 @@ def run(engine, seed=42, outdir="data"):
     stores = [l for l in locs if l["type"] == "store"]; whs = [l for l in locs if l["type"] == "warehouse"]
     cogs = {r[0]: r[1] for r in duckdb.connect().execute(f"select store_id, sum(cogs_paise) from read_parquet('{outdir}/sales_daily/**/*.parquet', hive_partitioning=true) group by 1").fetchall()}
 
-    # ---- batches and stock (thin slice for near-expiry) ----
-    chosen = [byid[i] for i in pine if i in byid] + rng.sample([s for s in active if s["id"] not in pine and (s["shelf_life_days"] or 999) <= 365], 60)
-    batches, bal, bid = [], {}, 0
-    for s in chosen:
-        ages = [105, 80, 70, 40, 15] if s["id"] in pine else [150, 110, 60, 20]
-        for a in ages:
-            bid += 1; rec = (NOW - timedelta(days=a)).date(); life = s["shelf_life_days"] or 180
-            batches.append(dict(id=bid, batch_no=f"B{s['code']}-{rec:%y%m%d}", sku_id=s["id"], vendor_id=vend.get(s["bulk_sku_id"] or s["id"]) or 1, received_on=rec, mfg_date=rec - timedelta(days=10),
-                                expiry_date=rec + timedelta(days=life), mrp_paise=s["mrp_paise"], unit_cost_paise=s["std_cost_paise"], source_doc_type="seed", source_doc_id="m5"))
-    bysku = {}
-    for b in batches: bysku.setdefault(b["sku_id"], []).append(b)
-    big = lambda s, lo, hi: rng.randint(lo, hi) * (1000 if s["base_uom"] == "g" else 1)
-    for b in batches:
-        s = byid[b["sku_id"]]; left = (b["expiry_date"] - NOW.date()).days
-        if s["id"] in pine and s["base_uom"] != "g":
-            for st in kiosks:
-                if rng.random() < (0.9 if left < 35 else 0.4): bal[(st, s["id"], b["id"])] = rng.randint(3, 12) if left > 0 else rng.randint(1, 4)
-        elif left >= -3:
-            for l in rng.sample(whs, 4): bal[(l["id"], s["id"], b["id"])] = big(s, 2, 12) if s["base_uom"] == "g" else rng.randint(5, 60)
-            for l in rng.sample(stores, 14): bal[(l["id"], s["id"], b["id"])] = big(s, 1, 3) if s["base_uom"] == "g" else rng.randint(1, 8)
-    balrows = [dict(location_id=k[0], sku_id=k[1], batch_id=k[2], qty=q, updated_at=NOW) for k, q in bal.items()]
-    bexp = {b["id"]: b["expiry_date"] for b in batches}; store_ids = {l["id"] for l in stores}
-    marks = []
-    for (loc, sid, b), q in bal.items():
-        left = (bexp[b] - NOW.date()).days
-        if 0 <= left <= 30 and loc in store_ids:
-            marks.append(dict(location_id=loc, batch_id=b, suggested_pct=40.0 if left <= 7 else 30.0 if left <= 15 else 20.0, reason=f"{left} days to expiry, {q} in stock", created_at=NOW, status="open"))
+    # ---- batches and stock: Module 4 owns them. The thin slice below is only used when inventory was not seeded ----
+    with engine.connect() as c:
+        have = c.execute(text("select count(*) from batch")).scalar() > 0
+        brs = [dict(r._mapping) for r in c.execute(text("select id, sku_id from batch"))] if have else []
+        mk = c.execute(text("select s.location_id, s.batch_id, s.qty, b.expiry_date from stock_balance s join batch b on b.id=s.batch_id join location l on l.id=s.location_id "
+                            "where l.type='store' and s.qty>0 and b.expiry_date between :a and :b"), dict(a=str(NOW.date()), b=str(NOW.date() + timedelta(days=30)))).fetchall() if have else []
+    batches, balrows, marks = [], [], []
+    if have:
+        bysku = {}
+        for b in brs: bysku.setdefault(b["sku_id"], []).append(b)
+        for loc, bid_, q, ex in mk:
+            left = (date.fromisoformat(str(ex)[:10]) - NOW.date()).days
+            marks.append(dict(location_id=loc, batch_id=bid_, suggested_pct=40.0 if left <= 7 else 30.0 if left <= 15 else 20.0, reason=f"{left} days to expiry, {q} in stock", created_at=NOW, status="open"))
+    else:
+        chosen = [byid[i] for i in pine if i in byid] + rng.sample([s for s in active if s["id"] not in pine and (s["shelf_life_days"] or 999) <= 365], 60)
+        batches, bal, bid = [], {}, 0
+        for s in chosen:
+            ages = [105, 80, 70, 40, 15] if s["id"] in pine else [150, 110, 60, 20]
+            for a in ages:
+                bid += 1; rec = (NOW - timedelta(days=a)).date(); life = s["shelf_life_days"] or 180
+                batches.append(dict(id=bid, batch_no=f"B{s['code']}-{rec:%y%m%d}", sku_id=s["id"], vendor_id=vend.get(s["bulk_sku_id"] or s["id"]) or 1, received_on=rec, mfg_date=rec - timedelta(days=10),
+                                    expiry_date=rec + timedelta(days=life), mrp_paise=s["mrp_paise"], unit_cost_paise=s["std_cost_paise"], source_doc_type="seed", source_doc_id="m5"))
+        bysku = {}
+        for b in batches: bysku.setdefault(b["sku_id"], []).append(b)
+        big = lambda s, lo, hi: rng.randint(lo, hi) * (1000 if s["base_uom"] == "g" else 1)
+        for b in batches:
+            s = byid[b["sku_id"]]; left = (b["expiry_date"] - NOW.date()).days
+            if s["id"] in pine and s["base_uom"] != "g":
+                for st in kiosks:
+                    if rng.random() < (0.9 if left < 35 else 0.4): bal[(st, s["id"], b["id"])] = rng.randint(3, 12) if left > 0 else rng.randint(1, 4)
+            elif left >= -3:
+                for l in rng.sample(whs, 4): bal[(l["id"], s["id"], b["id"])] = big(s, 2, 12) if s["base_uom"] == "g" else rng.randint(5, 60)
+                for l in rng.sample(stores, 14): bal[(l["id"], s["id"], b["id"])] = big(s, 1, 3) if s["base_uom"] == "g" else rng.randint(1, 8)
+        balrows = [dict(location_id=k[0], sku_id=k[1], batch_id=k[2], qty=q, updated_at=NOW) for k, q in bal.items()]
+        bexp = {b["id"]: b["expiry_date"] for b in batches}; store_ids = {l["id"] for l in stores}
+        marks = []
+        for (loc, sid, b), q in bal.items():
+            left = (bexp[b] - NOW.date()).days
+            if 0 <= left <= 30 and loc in store_ids:
+                marks.append(dict(location_id=loc, batch_id=b, suggested_pct=40.0 if left <= 7 else 30.0 if left <= 15 else 20.0, reason=f"{left} days to expiry, {q} in stock", created_at=NOW, status="open"))
 
     # ---- wastage entries ----
     ent = []

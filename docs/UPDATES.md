@@ -49,6 +49,16 @@
 - Tests: 10 new in tests/test_wastage.py (28 total), smoke extended (wastage page, filters, form validation), no console errors. Fixed a resize error in the Control Tower chart when leaving the page.
 - Open: photo upload (only a photo reference is stored), markdown acceptance does not change POS price yet (needs POS), vendor claim workflow, cap breach alerts for weighing and samples (caps are in wastage_reason but not enforced), stock deduction only for the seeded batches until Module 4.
 - Local test note: smoke needs Playwright matching the installed Chromium; `make setup` should run in a venv on newer Ubuntu (PEP 668).
+## 2026-11-01 Module 4 Inventory and warehouse
+- Seed (dfh/seed/inventory.py, about 7 s): 3,663 batches, 233k ledger rows, 162k balances, 42 transfers, 32 indents, 30 repack jobs, 24 count plans. Every balance equals the sum of its ledger rows (tested). Cost is per kg for loose SKUs, per unit for packs.
+- API (dfh/inventory.py): overview with exceptions, stock by location with min/max status, SKU batches and locations, ledger by SKU, location or batch, expiry buckets with suggested action, transfers (draft, dispatch with FEFO, receive with short quantities, cancel), indents (raise, allocate with reservations, dispatch into a transfer, cancel), repack (yield loss flag above 2 percent, block above 5), cycle counts (ABC plans, submit, approve with limits), gift box readiness, shrink by reason.
+- Rules: stock moves only through one posting function that refuses negative balances. Expired batches never ship. Loose moves in 100 g steps. Inter-state move above Rs 50,000 needs an e-way reference (stated assumption, GST on hold). Count variance above Rs 5,000 on a line or Rs 10,000 in total needs CEO or admin. Scope: warehouse users act on their own warehouse, store managers see their store.
+- Screens (frontend/src/page_inv.js): Overview, Stock, Expiry, Transfers, Indents, Repack, Cycle counts, Gift boxes, with drawers for SKU batches, transfers, indents and counts.
+- Planted findings now visible: F1 Hyderabad shrink (about 16x typical, mostly unexplained, plus repack loss), F3 Pune warehouse under store minimums on about 25 SKUs, F6 dried pineapple near expiry in 30 kiosks, F7 Cashews 500g limits two Diwali boxes (festival need assumed at 4x store max).
+- Tests: 9 new in tests/test_inventory.py (run on a temp copy of the DB), 27 total passing.
+- Schema: transfer.indent_id added, ledger and transfer indexes.
+- Not verified: browser smoke for the new screens. Chromium could not be downloaded in the build sandbox. JS syntax and static serving checked only. Run `make smoke` locally.
+- Open: count freeze during counting (system quantity refreshes at submit), store to warehouse returns, bin level putaway and pick paths, bulk and corporate order desk, GRN link (receipts are opening stock until Module 3), approvals through the platform approval table, notifications.
 
 ## 2026-10-31 App shell, SKU master (Module 2), Control Tower v0 (Module 1)
 - Backend: FastAPI (dfh/app.py), DuckDB analytics over the Parquet history (dfh/analytics.py), signed-token login, role and store/warehouse scoping.

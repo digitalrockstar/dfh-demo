@@ -6,10 +6,11 @@ import * as wastage from "./page_wastage.js";
 import * as demand from "./page_demand.js";
 import * as proc from "./page_procurement.js";
 import * as pos from "./page_pos.js";
+import * as inv from "./page_inv.js";
 
 const NAV = [
   ["Overview", [["control-tower", "Control Tower", 1, 1], ["skus", "SKU master", 2, 1]]],
-  ["Operations", [["pos", "Store POS", "P", 1], ["inventory", "Inventory and warehouse", 4, 0], ["procurement", "Procurement and logistics", 3, 1], ["wastage", "Wastage and shrink", 5, 1], ["demand", "Demand and replenishment", 6, 1]]],
+  ["Operations", [["pos", "Store POS", "P", 1], ["inventory", "Inventory and warehouse", 4, 1], ["procurement", "Procurement and logistics", 3, 1], ["wastage", "Wastage and shrink", 5, 1], ["demand", "Demand and replenishment", 6, 1]]],
   ["Business", [["finance", "Finance and tax", 7, 0], ["customers", "Customers and WhatsApp", 8, 0], ["hr", "People", 9, 0], ["platform", "Platform", 10, 0]]]];
 const SOON = {
   inventory: ["A stock ledger by location and batch with expiry, so every kilo has a history.", "Batches, FEFO picking, transfers and in-transit stock", "Store indents, repacking with yield loss, cycle counts", "Bulk and corporate order desk"],
@@ -74,6 +75,7 @@ async function route0() {
   if (page === "demand") return demand.render(v);
   if (page === "procurement") return proc.render(v);
   if (page === "pos") return pos.render(v);
+  if (page === "inventory") return inv.render(v);
   const d = SOON[param] || SOON.platform, label = NAV.flatMap(g => g[1]).find(x => x[0] === param);
   mount(v, html`<div class="head"><div><div class="eyebrow">${label ? "Module " + label[2] : ""}</div><h1>${label ? label[1] : "Coming soon"}</h1></div></div><div class="soonbox glass"><p>${d[0]}</p><ul>${d.slice(1).map(x => html`<li>${x}</li>`)}</ul><p class="small muted" style="margin-top:16px">Built after the modules above it. The plan and order are in the product book.</p></div>`);
 }
