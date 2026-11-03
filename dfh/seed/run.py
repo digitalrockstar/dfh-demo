@@ -4,7 +4,7 @@ from sqlalchemy import insert
 from ..schema import metadata
 from ..db import get_engine
 from .masters import build_masters
-from . import history, wastage, procurement, pos, inventory, finance
+from . import history, inventory, wastage, procurement, pos, finance
 from ..demand import model as demand
 
 

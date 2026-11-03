@@ -5,6 +5,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
+from . import stockpost
 
 VIEW = {"ceo", "finance", "admin", "procurement", "warehouse", "store_manager"}
 ENTER = {"ceo", "admin", "warehouse", "store_manager"}
@@ -199,10 +200,10 @@ def attach(app, ctx):
                 if not bt: raise HTTPException(422, "That batch does not belong to this SKU")
                 bal = c.execute(text("select qty from stock_balance where location_id=:l and sku_id=:s and batch_id=:b"), dict(l=b.location_id, s=b.sku_id, b=b.batch_id)).fetchone()
                 if not bal or bal[0] < b.qty: raise HTTPException(422, f"Only {bal[0] if bal else 0} {unit} of that batch is recorded at this location")
-                c.execute(text("update stock_balance set qty=qty-:q, updated_at=:t where location_id=:l and sku_id=:s and batch_id=:b"), dict(q=b.qty, t=NOW, l=b.location_id, s=b.sku_id, b=b.batch_id))
             r = c.execute(text("insert into wastage_entry(ts, location_id, sku_id, batch_id, qty, reason, cost_paise, entered_by, status, approved_by, photo_ref, vendor_claim) values (:t,:l,:s,:b,:q,:r,:c,:u,:st,:ap,null,0)"),
                           dict(t=NOW, l=b.location_id, s=b.sku_id, b=b.batch_id, q=b.qty, r=b.reason, c=cost, u=u["id"], st=status, ap=u["id"] if status == "approved" and u["role"] in APPROVE else None))
             eid = r.lastrowid
+            if b.batch_id: stockpost.post(c, NOW, b.location_id, b.sku_id, b.batch_id, -b.qty, "wastage", "wastage_entry", eid, u["id"])
             audit(c, u, "create", "wastage_entry", eid, None, dict(location_id=b.location_id, sku_id=b.sku_id, qty=b.qty, reason=b.reason, cost_paise=cost, status=status, note=b.note))
         return dict(id=eid, cost_paise=cost, status=status)
 
@@ -219,7 +220,7 @@ def attach(app, ctx):
         with engine.begin() as c:
             c.execute(text("update wastage_entry set status=:s, approved_by=:u where id=:i"), dict(s=new, u=u["id"], i=eid))
             if new == "rejected" and x["batch_id"]:
-                c.execute(text("update stock_balance set qty=qty+:q where location_id=:l and sku_id=:s and batch_id=:b"), dict(q=x["qty"], l=x["location_id"], s=x["sku_id"], b=x["batch_id"]))
+                stockpost.post(c, NOW, x["location_id"], x["sku_id"], x["batch_id"], x["qty"], "wastage_reversal", "wastage_entry", eid, u["id"])
             audit(c, u, b.action, "wastage_entry", eid, dict(status="pending"), dict(status=new))
         return dict(id=eid, status=new)
 

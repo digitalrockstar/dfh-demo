@@ -59,7 +59,7 @@ def test_planted_f6_pineapple_expiry(client):
     s = client.get("/api/wastage/skus?days=90&reason=EXPIRY&kind=store", headers=h).json(); assert all("Pineapple" in x["name"] for x in s[:3]) and s[0]["expiry"] == s[0]["cost"]
     assert client.get("/api/wastage/skus?days=90&reason=THEFT", headers=h).json()[0]["expiry"] == 0
     e = client.get("/api/wastage/expiry?window=30&kind=store", headers=h).json()
-    assert e["rows"] and all(r["days_left"] <= 30 for r in e["rows"]) and "expired" in e["buckets"]
+    assert e["rows"] and all(r["days_left"] <= 30 for r in e["rows"]) and e["buckets"]["d15"]["n"] > 0
     assert any("Pineapple" in t["sku"] for t in e["top_skus"])
     assert any(e2["type"] == "expiry" and "Pineapple" in e2["detail"] for e2 in client.get("/api/ct/exceptions", headers=h).json())
     assert [r["value"] for r in e["rows"]] == sorted((r["value"] for r in e["rows"]), reverse=True)
@@ -116,6 +116,7 @@ def test_entry_approval_flow_restores_stock(client, eng):
     finally:
         with eng.begin() as c:
             c.execute(text("delete from wastage_entry where id=:a"), dict(a=eid)); c.execute(text("delete from audit_log where table_name='wastage_entry' and row_id=:a"), dict(a=str(eid)))
+            c.execute(text("delete from stock_ledger where doc_type='wastage_entry' and doc_id in (:a,:b)"), dict(a=str(eid), b=str(locals().get("eid2", ""))))
             c.execute(text("update stock_balance set qty=:q where location_id=:l and sku_id=:s and batch_id=:b"), dict(q=bal, l=loc, s=sku, b=batch))
 
 

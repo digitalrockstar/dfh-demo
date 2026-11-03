@@ -113,3 +113,4 @@ textarea.input{width:100%;min-height:130px;font-family:ui-monospace,Menlo,monosp
 .kv2{display:grid;grid-template-columns:1fr auto;gap:6px 18px;margin:10px 0}
 .receipt{max-width:380px}.receipt h2{margin-top:6px}
 @media print{body *{visibility:hidden}.receipt,.receipt *{visibility:visible}.receipt{position:absolute;left:0;top:0;transform:none;box-shadow:none;border:0}.receipt .row{display:none}}
+.tile .tag{font-size:11px;color:var(--warn,#b45309);font-weight:600}.cl .warn{color:var(--warn,#b45309)}

@@ -129,7 +129,7 @@ function grid() {
   const el = root.querySelector("#ptiles"); if (!el) return;
   const q = P.q.trim().toLowerCase();
   const rows = P.catalog.filter(s => (!P.cat || s.cat === P.cat) && (!q || s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q) || (s.barcode || "").includes(q)));
-  el.innerHTML = out(html`${rows.slice(0, 60).map(s => html`<button class="tile" data-act="pos-add" data-id="${s.id}"><span class="tn">${s.name}</span><span class="tp num">${inr(s.price, false)}${s.uom === "g" ? " / kg" : ""}</span></button>`)}${rows.length > 60 ? html`<p class="small muted" style="grid-column:1/-1">Showing 60 of ${rows.length}. Type to narrow it down.</p>` : ""}${rows.length ? "" : html`<p class="muted" style="grid-column:1/-1">Nothing matches.</p>`}`);
+  el.innerHTML = out(html`${rows.slice(0, 60).map(s => html`<button class="tile" data-act="pos-add" data-id="${s.id}"><span class="tn">${s.name}</span><span class="tp num">${inr(s.price, false)}${s.uom === "g" ? " / kg" : ""}</span>${s.stock <= 0 ? html`<span class="tag">No stock recorded</span>` : ""}</button>`)}${rows.length > 60 ? html`<p class="small muted" style="grid-column:1/-1">Showing 60 of ${rows.length}. Type to narrow it down.</p>` : ""}${rows.length ? "" : html`<p class="muted" style="grid-column:1/-1">Nothing matches.</p>`}`);
 }
 acts["pos-cat"] = a => { P.cat = a.dataset.v; root.querySelectorAll(".catbar .chip").forEach(c => c.classList.toggle("on", c === a)); grid(); };
 function add(s) {
@@ -146,7 +146,7 @@ acts["pos-w"] = a => { const l = P.cart[+a.dataset.i]; l.qty = +a.dataset.v; P.p
 function cart() {
   const el = root.querySelector("#pcart"); if (!el) return;
   if (!P.cart.length) { el.innerHTML = out(html`<p class="muted" style="padding:24px 0;text-align:center">Tap an item or scan a barcode to start a bill.</p>`); totals(); return; }
-  el.innerHTML = out(html`${P.cart.map((l, i) => html`<div class="cl"><div class="cn"><b>${l.sku.name}</b><span class="small muted">${inr(l.sku.price, false)}${l.sku.uom === "g" ? " per kg" : " each"}, GST ${l.sku.tax_pct}% included</span></div>
+  el.innerHTML = out(html`${P.cart.map((l, i) => html`<div class="cl"><div class="cn"><b>${l.sku.name}</b><span class="small muted">${inr(l.sku.price, false)}${l.sku.uom === "g" ? " per kg" : " each"}, GST ${l.sku.tax_pct}% included</span>${l.qty > l.sku.stock ? html`<span class="small warn">Store stock shows ${qtyTxt(Math.max(l.sku.stock, 0), l.sku.uom)}. You can still bill it, a manager will see the shortfall.</span>` : ""}</div>
     <div class="cq">${l.sku.uom === "g" ? html`<input class="input num" data-g="${i}" inputmode="decimal" value="${(l.qty / 1000).toFixed(3).replace(/\.?0+$/, "")}" aria-label="Weight in kg"><span class="small muted">kg</span>
       <div class="chips wq">${[100, 250, 500, 1000].map(w => html`<button class="chip" data-act="pos-w" data-i="${i}" data-v="${w}">${w >= 1000 ? "1 kg" : w + " g"}</button>`)}</div>`
       : html`<button class="btn sm" data-act="pos-step" data-i="${i}" data-d="-1" aria-label="Less">-</button><b class="num">${l.qty}</b><button class="btn sm" data-act="pos-step" data-i="${i}" data-d="1" aria-label="More">+</button>`}</div>
