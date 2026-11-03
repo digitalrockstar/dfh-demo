@@ -48,7 +48,7 @@ landed_cost: shipment_id i fk=shipment.id I; component s16; amount_paise b; curr
 batch: batch_no s40 U; sku_id i fk=sku.id I; vendor_id i N fk=vendor.id; received_on d; mfg_date d N; expiry_date d I; mrp_paise b N; unit_cost_paise b; source_doc_type s20; source_doc_id s40
 grn: grn_no s30 U; po_id i N fk=purchase_order.id; shipment_id i N fk=shipment.id; location_id i fk=location.id; received_at dt; status s12; received_by i N
 grn_line: grn_id i fk=grn.id I; sku_id i fk=sku.id; batch_id i N fk=batch.id; qty_received b; qty_accepted b; qty_rejected b; reject_reason s40 N; unit_cost_paise b
-vendor_invoice: vendor_id i fk=vendor.id I; po_id i N fk=purchase_order.id; inv_no s40; inv_date d; amount_minor b; currency s3; status s12; due_date d; note t N
+vendor_invoice: vendor_id i fk=vendor.id I; po_id i N fk=purchase_order.id; inv_no s40; inv_date d; amount_minor b; currency s3; status s12; due_date d; note t N; entity_id i N fk=legal_entity.id; taxable_minor b N; tax_minor b N
 vendor_payment: vendor_id i fk=vendor.id I; invoice_id i N fk=vendor_invoice.id; paid_on d; amount_minor b; mode s12; fx_rate f
 debit_note: vendor_id i fk=vendor.id; grn_id i N fk=grn.id; amount_paise b; reason s60; created_at dt
 stock_ledger: ts dt; location_id i fk=location.id; bin_id i N fk=location_bin.id; sku_id i fk=sku.id; batch_id i N fk=batch.id; qty b; movement_type s20; doc_type s20; doc_id s40; unit_cost_paise b N; user_id i N; device_id i N
@@ -81,8 +81,8 @@ markdown_suggestion: location_id i fk=location.id; batch_id i fk=batch.id; sugge
 account: code s10 U; name s80; type s12
 journal_entry: jv_no s30 U; date d I; entity_id i fk=legal_entity.id; source_doc_type s20; source_doc_id s40; narration s200
 journal_line: jv_id i fk=journal_entry.id I; account_code s10; debit_paise b; credit_paise b; location_id i N fk=location.id
-settlement: store_id i N fk=location.id; mode s10; settle_date d; expected_paise b; received_paise b; fee_paise b; ref s60 N; status s10
-recon_item: source s20; source_ref s60; store_id i N fk=location.id; business_date d; amount_paise b; matched_to s60 N; status s10
+settlement: store_id i N fk=location.id; mode s10; settle_date d; business_date d I; expected_paise b; received_paise b; fee_paise b; ref s60 N; status s10
+recon_item: source s20; source_ref s60; store_id i N fk=location.id; business_date d; amount_paise b; matched_to s60 N; status s12; note t N; resolved_by i N; resolved_at dt N
 gst_return_period: entity_id i fk=legal_entity.id; period s7; status s10; locked_at dt N
 gstr2b_line: entity_id i fk=legal_entity.id; period s7; supplier_gstin s24; inv_no s40; taxable_paise b; tax_paise b; matched_invoice_id i N fk=vendor_invoice.id; status s10
 period_lock: entity_id i fk=legal_entity.id; period s7; locked_at dt; locked_by i N
@@ -129,6 +129,9 @@ IDX = {
     "price_list_item": [["price_list_id", "sku_id"]],
     "settlement": [["store_id", "settle_date"]],
     "day_close": [["store_id", "business_date"]],
+    "recon_item": [["status", "source"]],
+    "journal_entry": [["entity_id", "date"]],
+    "vendor_invoice": [["entity_id", "inv_date"]],
 }
 TYPES = {"i": Integer, "b": BigInteger, "t": Text, "f": Float, "d": Date, "dt": DateTime,
          "bo": Boolean, "j": JSON}

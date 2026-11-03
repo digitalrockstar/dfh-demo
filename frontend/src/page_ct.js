@@ -6,7 +6,7 @@ const st = { days: 30, region: "", order: "top", tier: "" };
 let filters = { regions: [] }, root = null;
 const qs = () => `days=${st.days}&region=${encodeURIComponent(st.region)}&tier=${st.tier}`;
 
-const LATER = [["Cash variance by store", "POS day close"], ["Unreconciled settlements", "Finance"]];
+const LATER = [];
 
 export async function render(el) {
   root = el; filters = await api("/ct/filters").catch(() => ({ regions: [] }));
