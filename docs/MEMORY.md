@@ -13,3 +13,4 @@
 - Frontend: plain ES modules, html tagged template with auto escaping (src/ui.js), delegated clicks via data-act (src/core.js). Charts are inline SVG.
 - Net sales are tax inclusive; gross margin is ex tax using the assumed GST rates in tax_rate.
 - Inter static fonts live in frontend/assets/fonts (SIL OFL) and tools/fonts.
+- Module 8: dfh/crm_api.py, dfh/seed/crm.py, frontend/src/page_crm.js, tests/test_crm.py, `make smoke-crm`. Customer segments are rule based (see UPDATES). WhatsApp sends and payments are simulated. Seed adds customer_purchase, wa_message, wa_template tables (98 tables).
