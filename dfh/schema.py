@@ -100,16 +100,16 @@ wa_message: customer_id i fk=customer.id I; direction s3; ts dt I; kind s12; bod
 ## hr
 department: name s60 U
 designation: title s60 U; level i
-employee: emp_code s20 U; name s80; department_id i fk=department.id; designation_id i fk=designation.id; location_id i fk=location.id I; manager_id i N fk=employee.id; join_date d; birth_date d; status s10; email s120 N
+employee: emp_code s20 U; name s80; department_id i fk=department.id; designation_id i fk=designation.id; location_id i fk=location.id I; manager_id i N fk=employee.id; join_date d; birth_date d; status s10; email s120 N; exit_date d N; exit_reason s40 N
 shift: code s10 U; start_time s5; end_time s5
-attendance: employee_id i fk=employee.id; date d; punch_in dt N; punch_out dt N; source s10; location_id i fk=location.id; hours f N; status s10
+attendance: employee_id i fk=employee.id; date d; punch_in dt N; punch_out dt N; source s10; location_id i fk=location.id; hours f N; status s10; fixed bo
 roster: employee_id i fk=employee.id; date d; shift_id i fk=shift.id; location_id i fk=location.id
 leave_type: code s10 U; name s40; annual_quota i
-leave_request: employee_id i fk=employee.id I; leave_type_id i fk=leave_type.id; from_date d; to_date d; status s10; is_wfh bo; approver_id i N fk=employee.id
+leave_request: employee_id i fk=employee.id I; leave_type_id i fk=leave_type.id; from_date d; to_date d; status s10; is_wfh bo; approver_id i N fk=employee.id; days i; reason s200 N; applied_on d; decided_on d N; decision_note s200 N
 holiday: date d; name s80; state s40 N
 onboarding_task: employee_id i fk=employee.id I; task s120; due_date d; done_at dt N
-job_posting: title s120; department_id i fk=department.id; location_id i N fk=location.id; status s10; posted_on d; closes_on d N; description t
-applicant: job_id i fk=job_posting.id I; name s80; stage s16; applied_on d; source s20
+job_posting: title s120; department_id i fk=department.id; location_id i N fk=location.id; status s10; posted_on d; closes_on d N; description t; designation_id i N fk=designation.id; openings i
+applicant: job_id i fk=job_posting.id I; name s80; stage s16; applied_on d; source s20; email s120 N; stage_changed_on d N; employee_id i N fk=employee.id
 announcement: title s120; body t; created_at dt; audience s30
 ## analytics
 forecast_run: run_at dt; method s30; horizon_weeks i; wape f N; notes t N

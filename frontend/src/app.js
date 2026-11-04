@@ -9,11 +9,12 @@ import * as pos from "./page_pos.js";
 import * as inv from "./page_inv.js";
 import * as fin from "./page_finance.js";
 import * as crm from "./page_crm.js";
+import * as hr from "./page_hr.js";
 
 const NAV = [
   ["Overview", [["control-tower", "Control Tower", 1, 1], ["skus", "SKU master", 2, 1]]],
   ["Operations", [["pos", "Store POS", "P", 1], ["inventory", "Inventory and warehouse", 4, 1], ["procurement", "Procurement and logistics", 3, 1], ["wastage", "Wastage and shrink", 5, 1], ["demand", "Demand and replenishment", 6, 1]]],
-  ["Business", [["finance", "Finance and tax", 7, 1], ["customers", "Customers and WhatsApp", 8, 1], ["hr", "People", 9, 0], ["platform", "Platform", 10, 0]]]];
+  ["Business", [["finance", "Finance and tax", 7, 1], ["customers", "Customers and WhatsApp", 8, 1], ["hr", "People", 9, 1], ["platform", "Platform", 10, 0]]]];
 const SOON = {
   inventory: ["A stock ledger by location and batch with expiry, so every kilo has a history.", "Batches, FEFO picking, transfers and in-transit stock", "Store indents, repacking with yield loss, cycle counts", "Bulk and corporate order desk"],
   procurement: ["Vendor price book, landed cost, purchase orders and shipment tracking from booking to receipt.", "Landed cost with freight, duty, clearing and FX", "GRN with batch and expiry, three-way match", "Vendor scorecards and best-vendor suggestions"],
@@ -21,7 +22,6 @@ const SOON = {
   demand: ["Seasonal forecasts and reorder suggestions that respect import lead times.", "Festival calendar uplift, store and SKU forecasts", "Suggested POs and store indents for approval", "Assortment by store cluster"],
   finance: ["Day-close reconciliation, GST working data and vendor payables. GSP integration is on hold and rates are stated assumptions.", "Settlement reconciliation against bank and gateway files", "Input credit matching and purchase register", "Journal export for Oracle, Tally or CSV"],
   customers: ["Customer record from phone numbers captured at the counter, loyalty and WhatsApp ordering.", "Customer 360 and segments", "WhatsApp order inbox into dispatch", "Corporate gifting quotes"],
-  hr: ["Org chart, onboarding, attendance with punch in and out, rosters, leave, birthdays and job postings.", "Store shift rosters", "Leave and work from home", "Careers page feed"],
   platform: ["Roles, approvals, audit log viewer, imports, multi-entity and multi-currency settings.", "Approval rules by amount", "Audit log viewer", "Sync and job health"]};
 const ROLE = { ceo: "CEO", finance: "Finance", procurement: "Procurement", warehouse: "Warehouse", store_manager: "Store manager", cashier: "Cashier", hr: "HR", marketing: "Marketing", admin: "Admin" };
 const root = document.getElementById("root");
@@ -80,6 +80,7 @@ async function route0() {
   if (page === "inventory") return inv.render(v);
   if (page === "finance") return fin.render(v);
   if (page === "customers") return crm.render(v);
+  if (page === "hr") return hr.render(v);
   const d = SOON[param] || SOON.platform, label = NAV.flatMap(g => g[1]).find(x => x[0] === param);
   mount(v, html`<div class="head"><div><div class="eyebrow">${label ? "Module " + label[2] : ""}</div><h1>${label ? label[1] : "Coming soon"}</h1></div></div><div class="soonbox glass"><p>${d[0]}</p><ul>${d.slice(1).map(x => html`<li>${x}</li>`)}</ul><p class="small muted" style="margin-top:16px">Built after the modules above it. The plan and order are in the product book.</p></div>`);
 }

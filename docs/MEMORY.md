@@ -14,3 +14,4 @@
 - Net sales are tax inclusive; gross margin is ex tax using the assumed GST rates in tax_rate.
 - Inter static fonts live in frontend/assets/fonts (SIL OFL) and tools/fonts.
 - Module 8: dfh/crm_api.py, dfh/seed/crm.py, frontend/src/page_crm.js, tests/test_crm.py, `make smoke-crm`. Customer segments are rule based (see UPDATES). WhatsApp sends and payments are simulated. Seed adds customer_purchase, wa_message, wa_template tables (98 tables).
+- Module 9: dfh/hr_api.py, dfh/seed/hr.py, frontend/src/page_hr.js, tests/test_hr.py. Rules are constants at the top of hr_api.py. Planted finding F9. Public careers feed at /api/public/careers.
