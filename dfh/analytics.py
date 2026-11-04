@@ -36,11 +36,12 @@ class Analytics:
             return self.con.execute(sql, list(params)).fetchall()
 
     @staticmethod
-    def _where(region=None, tier=None, city=None, store_ids=None):
+    def _where(region=None, tier=None, city=None, store_ids=None, fmt=None):
         w, p = [], []
         if region: w.append("d.region = ?"); p.append(region)
         if tier: w.append("d.tier = ?"); p.append(tier)
         if city: w.append("d.city = ?"); p.append(city)
+        if fmt: w.append("d.format = ?"); p.append(fmt)
         if store_ids is not None:
             w.append("d.id in (%s)" % (",".join(str(int(x)) for x in store_ids) or "-1"))
         return (" and " + " and ".join(w)) if w else "", p

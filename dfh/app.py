@@ -9,7 +9,7 @@ from sqlalchemy import text
 from . import auth
 from .analytics import Analytics
 from .db import get_engine
-from . import wastage_api, demand_api, procurement_api, pos_api, finance_api
+from . import wastage_api, demand_api, procurement_api, pos_api, finance_api, ct_api
 
 NOW = datetime(2026, 10, 31, 9, 0)           # demo "now", matches the seeded data
 STATUSES = ["draft", "active", "restricted", "delisted"]
@@ -193,8 +193,8 @@ def create_app(db_url=None, data_dir=None, serve_frontend=True):
         return dict(rows=len(rd), ok=len(plan), errors=errs, applied=applied)
 
     # ---------------- Control Tower v0 ----------------
-    def filters(u, region, tier, city):
-        return dict(region=region or None, tier=tier or None, city=city or None, store_ids=scope(u))
+    def filters(u, region, tier, city, fmt=""):
+        return dict(region=region or None, tier=tier or None, city=city or None, fmt=fmt or None, store_ids=scope(u))
 
     wa = wastage_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW))
     da = demand_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW))
@@ -204,24 +204,23 @@ def create_app(db_url=None, data_dir=None, serve_frontend=True):
     ct = need(CT_ROLES)
 
     @app.get("/api/ct/summary")
-    def ct_summary(days: int = 30, region: str = "", tier: str = "", city: str = "", u=Depends(ct)):
-        return an.summary(days, **filters(u, region, tier, city))
+    def ct_summary(days: int = 30, region: str = "", tier: str = "", city: str = "", fmt: str = "", u=Depends(ct)):
+        return an.summary(days, **filters(u, region, tier, city, fmt))
 
     @app.get("/api/ct/trend")
-    def ct_trend(days: int = 30, region: str = "", tier: str = "", city: str = "", u=Depends(ct)):
-        return an.trend(days, **filters(u, region, tier, city))
+    def ct_trend(days: int = 30, region: str = "", tier: str = "", city: str = "", fmt: str = "", u=Depends(ct)):
+        return an.trend(days, **filters(u, region, tier, city, fmt))
 
     @app.get("/api/ct/categories")
-    def ct_cats(days: int = 30, region: str = "", tier: str = "", city: str = "", u=Depends(ct)):
-        return an.category_mix(days, **filters(u, region, tier, city))
+    def ct_cats(days: int = 30, region: str = "", tier: str = "", city: str = "", fmt: str = "", u=Depends(ct)):
+        return an.category_mix(days, **filters(u, region, tier, city, fmt))
 
     @app.get("/api/ct/league")
-    def ct_league(days: int = 30, order: str = "top", region: str = "", tier: str = "", city: str = "", u=Depends(ct)):
-        return an.league(days, order=order, **filters(u, region, tier, city))
+    def ct_league(days: int = 30, order: str = "top", region: str = "", tier: str = "", city: str = "", fmt: str = "", limit: int = 10, u=Depends(ct)):
+        return an.league(days, order=order, limit=max(5, min(limit, 50)), **filters(u, region, tier, city, fmt))
 
-    @app.get("/api/ct/exceptions")
-    def ct_exc(region: str = "", tier: str = "", city: str = "", u=Depends(ct)):
-        f = filters(u, region, tier, city); out = []
+    def exceptions_for(f):
+        out = []
         for r in many("select id, name, city, last_sync_at from location where type='store' and last_sync_at is not null order by last_sync_at limit 400"):
             ls = r["last_sync_at"] if isinstance(r["last_sync_at"], datetime) else datetime.fromisoformat(str(r["last_sync_at"]))
             hrs = (NOW - ls).total_seconds() / 3600
@@ -238,9 +237,15 @@ def create_app(db_url=None, data_dir=None, serve_frontend=True):
         order = {"high": 0, "med": 1}
         return sorted(out, key=lambda x: order[x["severity"]])
 
+    @app.get("/api/ct/exceptions")
+    def ct_exc(region: str = "", tier: str = "", city: str = "", fmt: str = "", u=Depends(ct)):
+        return exceptions_for(filters(u, region, tier, city, fmt))
+
+    ct_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW), exceptions_for, ct, filters)
+
     @app.get("/api/ct/filters")
     def ct_filters(u=Depends(ct)):
-        return dict(regions=[r["region"] for r in many("select distinct region from location where type='store' order by region")], cities=[r["city"] for r in many("select distinct city from location where type='store' order by city")])
+        return dict(formats=[r["format"] for r in many("select distinct format from location where type='store' and format is not null order by format")], regions=[r["region"] for r in many("select distinct region from location where type='store' order by region")], cities=[r["city"] for r in many("select distinct city from location where type='store' order by city")])
 
     from .inventory import register as register_inventory
     register_inventory(app, engine, one, many, me, need, audit, NOW)

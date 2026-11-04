@@ -17,6 +17,9 @@ try:
         assert pg.locator(".kpi").count() == 5 and pg.locator("#trend svg path").count() >= 3
         pg.screenshot(path=f"{OUT}/2_control_tower.png")
         pg.click("[data-act=ct-days][data-v='7']"); pg.wait_for_timeout(900); pg.click("[data-act=ct-ord][data-v=bottom]"); pg.wait_for_timeout(900)
+        pg.click("#league tbody tr.click >> nth=0"); pg.wait_for_selector(".drawer .kpi .v"); pg.click(".drawer tr.click >> nth=0"); pg.wait_for_selector(".drawer h1"); pg.keyboard.press("Escape"); pg.wait_for_timeout(300)   # Control Tower drill (not run in the build sandbox)
+        pg.click("[data-act=ct-tab][data-v=inbox]"); pg.wait_for_selector("[data-ct-status]"); pg.click("[data-act=ct-tab][data-v=wh]"); pg.wait_for_selector("#ctbody .tbl tbody tr"); pg.screenshot(path=f"{OUT}/2b_ct_warehouses.png")
+        pg.click("[data-act=ct-tab][data-v=overview]"); pg.wait_for_selector("#cmp .tbl")
         pg.goto(f"http://127.0.0.1:{PORT}/#/skus"); pg.wait_for_selector(".tbl tbody tr.click"); pg.screenshot(path=f"{OUT}/3_skus.png")
         assert pg.locator(".tbl tbody tr.click").count() == 50
         pg.fill("#q", "almonds california"); pg.wait_for_timeout(700); n = pg.locator(".tbl tbody tr.click").count(); assert 3 <= n < 50, n

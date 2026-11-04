@@ -12,7 +12,7 @@ Full product plan: `docs/DFH_Product_Plan_v1.pdf` (25 pages; source `docs/build_
 5. POS foundation (PWA, IndexedDB, sync with idempotency keys, invoice series per device, day close, returns within 10 days for defective or damaged). DONE (offline first; sales post to the Module 4 ledger).
 6. Module 5 Wastage and shrink. DONE (built early on a thin batch and stock slice; Module 4 to take over batches).
 7. Module 7 Finance and tax reconciliation (assumed GST rates, GSP on hold). DONE (browser smoke pending).
-8. Module 1 Control Tower (needs data from the above).
+8. Module 1 Control Tower. DONE (browser smoke steps pending).
 9. Module 6 Demand and replenishment. DONE (built early on a modelled stock position; Module 4 and Module 3 replace on hand and on order).
 10. Module 8 Customers and WhatsApp, Module 9 HR basic.
 
