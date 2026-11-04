@@ -13,3 +13,6 @@ smoke:
 
 smoke-pos:
 	python scripts/smoke_pos.py
+
+smoke-crm:
+	python scripts/smoke_crm.py

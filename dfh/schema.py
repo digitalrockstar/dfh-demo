@@ -87,13 +87,16 @@ gst_return_period: entity_id i fk=legal_entity.id; period s7; status s10; locked
 gstr2b_line: entity_id i fk=legal_entity.id; period s7; supplier_gstin s24; inv_no s40; taxable_paise b; tax_paise b; matched_invoice_id i N fk=vendor_invoice.id; status s10
 period_lock: entity_id i fk=legal_entity.id; period s7; locked_at dt; locked_by i N
 ## crm
-customer: code s20 U; phone s20 U; name s80 N; city s40; created_at dt; first_store_id i N fk=location.id; consent_wa bo; consent_at dt N; loyalty_points i; segment s20 N
-loyalty_txn: customer_id i fk=customer.id I; sale_id s36 N fk=sale.id; points i; ts dt; kind s10
-wa_order: order_no s30 U; customer_id i fk=customer.id; status s12; source s12; created_at dt; total_paise b; payment_link s200 N
+customer: code s20 U; phone s20 U; name s80 N; city s40; created_at dt; first_store_id i N fk=location.id; consent_wa bo; consent_at dt N; loyalty_points i; segment s20 N; orders_n i N; spend_paise b N; last_order_on d N; last_marketing_at dt N
+loyalty_txn: customer_id i fk=customer.id I; sale_id s36 N fk=sale.id; points i; ts dt; kind s10; note s80 N
+customer_purchase: customer_id i fk=customer.id I; store_id i fk=location.id; business_date d; net_paise b; items i; top_category s40 N
+wa_order: order_no s30 U; customer_id i fk=customer.id; status s12; source s12; created_at dt; total_paise b; payment_link s200 N; fulfil_location_id i N fk=location.id; updated_at dt N; paid_at dt N; delivered_at dt N; city s40 N; note s200 N; cancel_reason s80 N; delivery_paise b N
 wa_order_line: order_id i fk=wa_order.id I; sku_id i fk=sku.id; qty b; price_paise b
-quote: quote_no s30 U; company s120; contact s80; status s12; created_at dt; valid_to d; total_paise b
+quote: quote_no s30 U; company s120; contact s80; status s12; created_at dt; valid_to d; total_paise b; owner_id i N; city s40 N; phone s20 N; decided_at dt N; lost_reason s80 N; note s200 N
 quote_line: quote_id i fk=quote.id I; sku_id i fk=sku.id; qty b; price_paise b
-campaign: name s120; template s80; segment s40; scheduled_at dt; status s12; sent i; delivered i; replied i
+campaign: name s120; template s80; segment s40; scheduled_at dt N; status s12; sent i; delivered i; replied i; audience i N; suppressed i N; optouts i N; created_by i N; approved_by i N; created_at dt N
+wa_template: code s40 U; name s80; category s12; body t; approved bo
+wa_message: customer_id i fk=customer.id I; direction s3; ts dt I; kind s12; body s1000; template s40 N; status s10; order_id i N fk=wa_order.id; campaign_id i N fk=campaign.id
 ## hr
 department: name s60 U
 designation: title s60 U; level i
@@ -132,6 +135,9 @@ IDX = {
     "recon_item": [["status", "source"]],
     "journal_entry": [["entity_id", "date"]],
     "vendor_invoice": [["entity_id", "inv_date"]],
+    "customer_purchase": [["store_id", "business_date"]],
+    "wa_message": [["customer_id", "ts"]],
+    "wa_order": [["status"]],
 }
 TYPES = {"i": Integer, "b": BigInteger, "t": Text, "f": Float, "d": Date, "dt": DateTime,
          "bo": Boolean, "j": JSON}
