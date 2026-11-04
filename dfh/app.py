@@ -9,7 +9,7 @@ from sqlalchemy import text
 from . import auth
 from .analytics import Analytics
 from .db import get_engine
-from . import wastage_api, demand_api, procurement_api, pos_api, finance_api, ct_api, crm_api
+from . import wastage_api, demand_api, procurement_api, pos_api, finance_api, ct_api, crm_api, hr_api
 
 NOW = datetime(2026, 10, 31, 9, 0)           # demo "now", matches the seeded data
 STATUSES = ["draft", "active", "restricted", "delisted"]
@@ -201,6 +201,7 @@ def create_app(db_url=None, data_dir=None, serve_frontend=True):
     pos_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW))
     fa = finance_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW))
     ca = crm_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW))
+    ha = hr_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW))
     pa = procurement_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW))
     ct = need(CT_ROLES)
 
@@ -236,6 +237,7 @@ def create_app(db_url=None, data_dir=None, serve_frontend=True):
         out += pa["exceptions"](f)
         out += fa["exceptions"](f)
         out += ca["exceptions"](f)
+        out += ha["exceptions"](f)
         order = {"high": 0, "med": 1}
         return sorted(out, key=lambda x: order[x["severity"]])
 

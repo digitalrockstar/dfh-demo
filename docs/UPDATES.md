@@ -1,5 +1,13 @@
 # UPDATES (newest first)
 
+## 2026-11-05 Module 9 HR basic
+- Seed (dfh/seed/hr.py, own random stream): 90 days of rosters and attendance plus 14 days of roster ahead, 10 holidays (dates marked assumed are not confirmed), about 8k leave requests, 70 exits and about 40 people on notice, 6 onboarding tasks per recent or upcoming joiner, 26 job postings with applicants. Punches are simulated, no payroll or salary data.
+- Screens (People): overview, directory with employee 360, attendance sheet with punch fixes, weekly rosters, leave and work from home, onboarding, recruitment (HR roles), org chart and headcount (HR roles). Store and warehouse managers see their own location only, with email and date of birth hidden.
+- Rules (assumed, shown on screen): stores need 2 people on shift and warehouses 5, at most 6 days and 48 paid hours a week, 11 hours rest, late is over 15 minutes, punch fixes within 7 days for managers and 30 for HR, leave over 5 days needs HR, 30 day notice (shorter needs CEO or admin), back-dating limited to 7 days. Approving leave that breaks cover returns a 409, and HR can override.
+- Hiring a candidate creates the employee (status joining, join date 14 days out by default) with a manager and six onboarding tasks, and closes the posting when filled. Open postings are served without sign in at /api/public/careers (apply included).
+- Planted F9: Hyderabad warehouse lost 5 associates in 90 days with about 3 times the absence of other warehouses and 2 candidates for 5 openings. Three small stores have pending leave on 3 Nov that breaks cover when approved. Control Tower gets four HR exceptions.
+- Tests: tests/test_hr.py (9 tests). Not built: payroll, statutory filings, performance reviews, a rate limit or captcha on the public apply endpoint, and a browser smoke test (make smoke-hr was not written because Chromium is not available in this sandbox).
+
 ## 2026-11-04 Module 8 Customers and WhatsApp
 - Seed (dfh/seed/crm.py, own random stream, about 3 s): 104k customer purchases and 105k loyalty transactions for the 25,000 customers, segments set by rule (New 4.2k, Regular 10.3k, Loyal 5.2k, Lapsing 2.7k, One-time 2.6k), 640 WhatsApp orders with lines, 3k chat messages, 6 approved templates, 7 campaigns, 29 corporate gifting quotes. Customer purchases are synthetic and are not linked to POS bills, because the sales history is aggregate.
 - Assumptions on screen: 1 loyalty point per Rs 50 spent, 1 point worth Rs 0.50, delivery Rs 49 and free above Rs 999, quote discounts 5% from 100 boxes, 10% from 300, 12% from 600.

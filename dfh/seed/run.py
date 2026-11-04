@@ -4,7 +4,7 @@ from sqlalchemy import insert
 from ..schema import metadata
 from ..db import get_engine
 from .masters import build_masters
-from . import history, inventory, wastage, procurement, pos, finance, crm
+from . import history, inventory, wastage, procurement, pos, finance, crm, hr
 from ..demand import model as demand
 
 
@@ -41,6 +41,7 @@ def main():
         print("pos:", pos.run(eng, a.seed, a.data))
         t3 = time.time(); print("finance:", finance.run(eng, a.seed, a.data), f"{time.time() - t3:.1f}s")
         t4 = time.time(); print("crm:", crm.run(eng, a.seed, a.data), f"{time.time() - t4:.1f}s")
+        t5 = time.time(); print("hr:", hr.run(eng, a.seed, a.data), f"{time.time() - t5:.1f}s")
 
 
 if __name__ == "__main__":
