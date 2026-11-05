@@ -1,5 +1,13 @@
 # UPDATES (newest first)
 
+## 2026-11-05 Bridges: ledger to demand, demand to PO, POS to Control Tower
+- stockpost.sync_position keeps stock_position.on_hand in step with every posting (stockpost.post and the Module 4 post). The GRN no longer adds on_hand itself (it would double count); it only reduces on_order.
+- Demand: refresh_open recomputes open suggestions whose snapshot differs from the live position (quantity, value, cover days, urgency). A line fully covered closes as status covered. Runs on suggestions, summary, exceptions and before a decision.
+- Demand to PO was already wired (Procurement, Create draft POs from approved suggestions). Demand screen copy updated; it said POs were not built.
+- Control Tower: /api/ct/live-pos and a Live POS bills card. Counts bills with business date after the history end, scoped to the user. Not added into history figures because the history is modelled.
+- Tests: tests/test_bridges.py (3). Full run after a clean reseed: 127 tests, 126 pass, 1 skipped.
+- Not done: browser smoke, POS returns restock, forecast re-run on live sales, price push to POS, customer to bill link.
+
 ## 2026-11-05 Readiness review
 - Fresh clone of main (e9bdd7c) in a clean venv: seed completes across all modules, 123 tests collected, 122 pass, 1 skipped, 0 fail. Control Tower tests take about 2 minutes.
 - All parameter-free GET endpoints return 200 for the CEO login. Empty by design or minor: platform notifications, SKU duplicates.

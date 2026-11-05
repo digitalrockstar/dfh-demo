@@ -3,6 +3,7 @@ Rules: stock only moves through post(), which writes the ledger and the balance 
 Picking is FEFO (earliest expiry first, expired batches never ship). Allocated indents reserve stock without moving it."""
 import json
 from datetime import timedelta
+from . import stockpost
 from typing import List, Optional
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
@@ -91,6 +92,7 @@ def register(app, engine, one, many, me, need, audit, NOW):
                   dict(t=ts, l=loc, s=sid, b=bid, q=qty, m=mt, d=dtp, i=did, c=cost, u=uid))
         if cur is None: c.execute(text("insert into stock_balance(location_id, sku_id, batch_id, qty, updated_at) values (:l,:s,:b,:q,:t)"), dict(l=loc, s=sid, b=bid, q=new, t=ts))
         else: c.execute(text("update stock_balance set qty=:q, updated_at=:t where location_id=:l and sku_id=:s and batch_id=:b"), dict(l=loc, s=sid, b=bid, q=new, t=ts))
+        stockpost.sync_position(c, loc, sid, qty)
 
     def batches_at(c, loc, sid, skip_indent=None, fresh_only=True):
         rows = c.execute(text("select b.batch_id, b.qty, bt.expiry_date, bt.batch_no from stock_balance b join batch bt on bt.id=b.batch_id where b.location_id=:l and b.sku_id=:s and b.qty>0 "

@@ -42,6 +42,7 @@ function overview() {
     <button class="btn" data-act="ct-save-view">Save view</button><button class="btn" data-act="ct-snap">Morning summary</button></div>
     <div class="kpis" id="kpis">${[1, 2, 3, 4, 5].map(() => html`<div class="kpi glass"><div class="sk" style="height:70px"></div></div>`)}</div>
     <div class="kpis" id="kpis2"></div>
+    <div class="kpis" id="kpis3"></div>
     <div class="cols"><div class="card glass"><div class="ct"><h2>Net sales by day</h2><span class="small muted">Thick line is the 7-day average. Dashed lines mark festival peaks.</span></div><div class="chart" id="trend"></div></div>
     <div class="card glass"><div class="ct"><h2>Category mix</h2><span class="small muted">Share of net sales</span></div><div class="bars" id="mix"></div></div></div>
     <div class="card glass" style="margin-bottom:16px"><div class="ct"><h2>Period compare</h2><div class="row">${seg("cmpm", "ct-cmp", st.cmp, [["wow", "Week on week"], ["mom", "Month on month"]])}${seg("lfl", "ct-lfl", st.lfl, [[1, "Like for like"], [0, "All stores"]])}</div></div><div id="cmp"></div></div>
@@ -70,6 +71,7 @@ async function refresh() {
     mount($("#kpis2"), html`${kpi("Gross margin after wastage", pct(hd.gm_after_wastage), `Wastage is ${pct(hd.wastage_pct_sales, 2)} of sales, ${inr(hd.wastage_cost)} at cost`)}
       ${kpi("Store stock at cost", inr(hd.store_stock_cost), hd.warehouse_stock_cost ? `Warehouses hold ${inr(hd.warehouse_stock_cost)}` : "Your store only")}
       ${kpi("Stock cover", hd.cover_days == null ? "n/a" : `${hd.cover_days.toFixed(0)} days`, "Store stock over daily cost of goods sold")}`);
+    api("/ct/live-pos").then(l => { if (!$("#kpis3")) return; mount($("#kpis3"), html`${kpi("Live POS bills", num(l.bills), l.bills ? `${inr(l.net)} across ${num(l.stores)} store${l.stores > 1 ? "s" : ""}${l.review ? `, ${num(l.review)} to review` : ""}` : `None yet after ${l.since}. Bills rung up at the POS appear here.`)}`); }).catch(() => {});
     const draw = () => { const t = $("#trend"); if (t) trendChart(t, tr, s.festivals); }; window.__ctTrend = draw; draw();
     mount($("#mix"), html`${mix.map(m => html`<div class="r"><span>${m.name}</span><div class="b"><i style="width:${(m.share / mix[0].share * 100).toFixed(1)}%"></i></div><span class="num r">${pct(m.share)} <span class="muted small">GM ${pct(m.gm, 0)}</span></span></div>`)}`);
     mount($("#league"), html`<div class="tblwrap" style="max-height:420px"><table class="tbl"><thead><tr><th>#</th><th>Store</th><th>City</th><th class="r">Per day</th><th class="r">GM</th><th class="r">Change</th></tr></thead><tbody>

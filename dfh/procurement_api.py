@@ -378,7 +378,7 @@ def attach(app, ctx):
                 if x.qty_rejected:
                     c.execute(text("insert into debit_note(vendor_id, grn_id, amount_paise, reason, created_at) values (:v,:g,:a,:r,:t)"), dict(v=p["vendor_id"], g=gid, a=inr(line_minor(x.qty_rejected, l["price_minor"], l["base_uom"]), p["fx_rate"]), r=f"Rejected on receipt: {x.reject_reason}", t=NOW))
                 row = c.execute(text("select on_hand, on_order from stock_position where location_id=:l and sku_id=:s"), dict(l=p["dest_location_id"], s=l["sku_id"])).first()
-                if row: c.execute(text("update stock_position set on_hand=:h, on_order=:o where location_id=:l and sku_id=:s"), dict(h=row[0] + acc, o=max(0, row[1] - x.qty_received), l=p["dest_location_id"], s=l["sku_id"]))
+                if row: c.execute(text("update stock_position set on_order=:o where location_id=:l and sku_id=:s"), dict(o=max(0, row[1] - x.qty_received), l=p["dest_location_id"], s=l["sku_id"]))
                 else: c.execute(text("insert into stock_position(location_id, sku_id, on_hand, on_order, eta_days, as_of) values (:l,:s,:h,0,0,:d)"), dict(l=p["dest_location_id"], s=l["sku_id"], h=acc, d=TODAY))
             tot = {r[0]: r[1] for r in c.execute(text("select gl.sku_id, sum(gl.qty_received) from grn g join grn_line gl on gl.grn_id=g.id where g.po_id=:p group by 1"), dict(p=pid))}
             full = all(tot.get(s, 0) >= l["qty"] * .95 for s, l in ls.items()); new = "received" if full else "partial"

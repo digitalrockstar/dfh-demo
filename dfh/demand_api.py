@@ -31,6 +31,26 @@ def attach(app, ctx):
     me, need, many, one, audit, engine, an, NOW = (ctx[k] for k in ("me", "need", "many", "one", "audit", "engine", "an", "NOW"))
     view = need(VIEW); buy_view = need(BUY_VIEW)
 
+    def refresh_open():
+        """Open suggestions follow the live warehouse position. Stock or orders that arrived since the run reduce the quantity or close the line;
+        stock that left (transfers, wastage) raises it. Only rows whose snapshot differs from the position are touched."""
+        rows = many("select r.id, r.suggested_qty q, r.on_hand oh, r.on_order oo, r.need_lead nl, r.cover_days cv, r.lead_time_days lt, r.moq, r.unit_cost_paise uc, "
+                    "p.on_hand poh, p.on_order poo, s.base_uom uom from reorder_suggestion r join stock_position p on p.location_id=r.location_id and p.sku_id=r.sku_id "
+                    "join sku s on s.id=r.sku_id where r.status='open' and (r.on_hand != p.on_hand or r.on_order != p.on_order)")
+        if not rows: return 0
+        with engine.begin() as c:
+            for r in rows:
+                step = 1000 if r["uom"] == "g" else 1; d = (r["poh"] + r["poo"]) - (r["oh"] + r["oo"]); qty = r["q"] - d
+                rate = (r["nl"] / r["lt"]) if r["lt"] else 0; cov = max(0.0, r["cv"] + (d / rate if rate else 0)); cov = min(cov, 999.0)
+                if qty <= 0 or (qty < r["moq"] and (r["poh"] + r["poo"]) >= r["nl"]):
+                    c.execute(text("update reorder_suggestion set status='covered', on_hand=:h, on_order=:o, cover_days=:v, decided_at=:t where id=:i"), dict(h=r["poh"], o=r["poo"], v=cov, t=NOW, i=r["id"]))
+                    continue
+                qty = int(math.ceil(max(qty, r["moq"]) / step) * step)
+                urg = "critical" if cov < r["lt"] else ("soon" if cov - r["lt"] < 7 else "plan")
+                c.execute(text("update reorder_suggestion set suggested_qty=:q, value_paise=:v, on_hand=:h, on_order=:o, cover_days=:cv, urgency=:u where id=:i"),
+                          dict(q=qty, v=int(qty * r["uc"]), h=r["poh"], o=r["poo"], cv=cov, u=urg, i=r["id"]))
+        return len(rows)
+
     def run():
         r = one("select id, run_at, horizon_weeks, wape, notes from forecast_run order by id desc limit 1")
         if not r: raise HTTPException(503, "Forecast has not been built. Run python -m dfh.demand.run")
@@ -120,6 +140,7 @@ def attach(app, ctx):
 
     @app.get("/api/demand/suggestions")
     def suggestions(wh: int = 0, cat: str = "", urgency: str = "", status: str = "open", q: str = "", page: int = 1, size: int = 25, u=Depends(buy_view)):
+        refresh_open()
         size = max(1, min(size, 100)); w, p = sug_where(u, wh, cat, status, q, urgency); w0, p0 = sug_where(u, wh, cat, status, q)
         counts = {x["urgency"]: dict(n=x["n"], value=int(x["v"])) for x in many("select r.urgency, count(*) n, sum(r.value_paise) v " + SUG + w0 + " group by 1", **p0)}
         tot = one("select count(*) n, coalesce(sum(r.value_paise), 0) v " + SUG + w, **p)
@@ -130,6 +151,7 @@ def attach(app, ctx):
 
     @app.post("/api/demand/suggestions/{sid}/decision")
     def decide(sid: int, b: Decision, u=Depends(need(APPROVE))):
+        refresh_open()
         if b.action not in ("approve", "reject"): raise HTTPException(422, "Action must be approve or reject")
         x = one("select id, location_id, sku_id, suggested_qty, unit_cost_paise, moq, status from reorder_suggestion where id=:i", i=sid)
         if not x: raise HTTPException(404, "Suggestion not found")
@@ -218,7 +240,7 @@ def attach(app, ctx):
     # ---------- summary and Control Tower ----------
     @app.get("/api/demand/summary")
     def summary(u=Depends(view)):
-        r = run(); n = r["notes"]; sc = stores(u); f = (" where " + inlist("store_id", sc)) if sc is not None else ""
+        refresh_open(); r = run(); n = r["notes"]; sc = stores(u); f = (" where " + inlist("store_id", sc)) if sc is not None else ""
         w4 = str(an.max_date + timedelta(days=29))
         nxt = one("select coalesce(sum(value_paise), 0) v from forecast" + (f + " and" if f else " where") + " week_start < :w", w=w4)["v"]
         cur = an.q("select coalesce(sum(net), 0) from agg where date > ?" + ((" and " + inlist("store_id", sc)) if sc is not None else ""), [an.max_date - timedelta(days=28)])[0][0]
@@ -233,7 +255,7 @@ def attach(app, ctx):
                     open=sg["n"], open_value=int(sg["v"]), critical=int(sg["crit"]), kits_at_risk=sum(1 for k in ks if k["coverage"] < .9), kits_total=len(ks), run_at=str(r["run_at"]), cutoff=n["cutoff"])
 
     def exceptions(f):
-        out = []
+        out = []; refresh_open()
         if f["store_ids"] is not None: return out
         n = one("select count(*) n, count(distinct sku_id) k from reorder_suggestion where status='open' and urgency='critical'")
         if n and n["n"]:

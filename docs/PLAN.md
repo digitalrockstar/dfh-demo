@@ -3,13 +3,18 @@
 Full product plan: `docs/DFH_Product_Plan_v1.pdf` (25 pages; source `docs/build_book.py`).
 
 ## Status (5 Nov 2026)
-All modules are built and merged to main. 123 tests, 122 pass, 1 skipped (procurement). Seed runs end to end.
+All modules are built and merged to main. 127 tests, 126 pass, 1 skipped (procurement). Seed runs end to end.
 Browser smoke has not been run for Inventory, Finance, Control Tower and Platform full (no Chromium in the build sandbox). Run `make smoke` locally before any demo.
 
-Known gaps between modules:
-- Demand reads `stock_position`, which only GRN updates. POS sales and the Module 4 ledger do not feed it yet.
-- Approving a reorder suggestion does not create a PO.
+Bridges closed on 5 Nov 2026:
+- Every ledger movement (GRN, transfers, wastage, POS) now moves the warehouse stock position that Demand reads. Open buy suggestions follow it: less stock raises the quantity, covering stock or orders closes the line ("covered").
+- Approved suggestions become draft POs from the Procurement screen (this was already built; the Demand screen copy was stale and is fixed).
+- Control Tower shows a Live POS card: bills rung up after the history ends. They are kept apart from the modelled history.
+- A store sale lowers store stock only. It reaches the warehouse position when the store indent is dispatched, as in real life.
+
+Known gaps:
 - POS returns do not restock; returns and day close are online only.
+- Demand does not yet re-run the forecast on live sales; only the position and open suggestions follow stock.
 - Entity scope is enforced in Platform only. Approvals cover vendor payment release and SKU price change.
 - Simulated: WhatsApp sends, payments, punches, GSP. No payroll.
 - POS invoice number is 22 characters; GST allows 16. Shorten before any pilot.

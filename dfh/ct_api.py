@@ -68,6 +68,16 @@ def attach(app, ctx, exceptions_for, ct_guard, filters):
                            "Average bill value and units per bill need bill level history, which exists only for POS demo bills."])
 
     # ---------- compare ----------
+    @app.get("/api/ct/live-pos")
+    def live_pos(u=Depends(ct_guard)):
+        """Bills rung up after the history ends (Parquet runs to an.max_date). History is modelled, so these are the only real POS sales and are shown apart, never added into the history figures."""
+        ids = scoped_ids(u); cl = id_clause(ids, "store_id"); since = str(an.max_date)
+        t = one("select count(*) bills, coalesce(sum(net_paise), 0) net, count(distinct store_id) stores, max(received_at) last_at, coalesce(sum(case when status='review' then 1 else 0 end), 0) review "
+                "from sale where status != 'void' and business_date > :d" + cl, d=since)
+        top = many("select l.id, l.name, l.city, count(*) bills, sum(s.net_paise) net from sale s join location l on l.id=s.store_id where s.status != 'void' and s.business_date > :d" + id_clause(ids, "s.store_id") +
+                   " group by l.id, l.name, l.city order by net desc limit 5", d=since)
+        return dict(since=since, bills=int(t["bills"]), net=int(t["net"]), stores=int(t["stores"]), last_at=str(t["last_at"]) if t["last_at"] else None, review=int(t["review"]), top=top)
+
     @app.get("/api/ct/compare")
     def compare(mode: str = "wow", lfl: int = 1, region: str = "", tier: str = "", city: str = "", fmt: str = "", u=Depends(ct_guard)):
         if mode not in ("wow", "mom"): raise HTTPException(422, "mode is wow or mom")

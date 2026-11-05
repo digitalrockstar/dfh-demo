@@ -7,7 +7,7 @@ All data is synthetic. Prices, costs, vendors and volumes are modeled, not real.
 ## Run the app
 ```
 make setup     # install, then seed all modules (a few minutes; use a venv on newer Ubuntu)
-make test      # 123 tests across all modules (about 5 minutes, Control Tower file takes 2)
+make test      # 127 tests across all modules (about 5 minutes, Control Tower file takes 2)
 make run       # http://localhost:8000  (login: ceo / demo1234)
 make smoke     # drives the UI in Chromium and saves screenshots to /tmp/shots
 make smoke-pos / smoke-crm / smoke-platform   # module level browser smoke
