@@ -12,7 +12,7 @@ export async function api(path, opts = {}) {
 }
 export function applyTheme() {
   const t = S.theme, dark = t.mode === "dark" || (t.mode === "auto" && matchMedia("(prefers-color-scheme: dark)").matches), r = document.documentElement;
-  r.dataset.mode = dark ? "dark" : "light"; r.dataset.tone = t.tone; r.style.setProperty("--glass", t.glass);
+  r.dataset.mode = dark ? "dark" : "light"; r.dataset.tone = t.tone; r.style.setProperty("--glass", t.glass); r.dataset.glass = +t.glass < .02 ? "off" : "on";
   localStorage.setItem("dfh_theme", JSON.stringify(t));
 }
 export function logout() { localStorage.removeItem("dfh_token"); localStorage.removeItem("dfh_user"); S.token = null; S.user = null; location.hash = ""; location.reload(); }

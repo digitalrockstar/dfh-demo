@@ -1,5 +1,10 @@
 # UPDATES (newest first)
 
+## 2026-11-05 Lag check
+- All parameter-free API calls measured under 1.1 s on the seeded data; slowest are demand min/max (1.1 s), demand forecast (0.9 s) and Control Tower exceptions (0.5 s). Typical page calls are under 0.1 s. The lag the user sees on Windows is therefore mostly in the browser.
+- Glass panels use backdrop-filter blur on every card, which is heavy on integrated GPUs. With the glass slider at 0 the blur is now switched off completely (before it stayed on as blur(0), which still costs a compositing layer).
+- Open: if lag remains with glass at 0, capture which screen and browser; candidates are the Control Tower trend chart redraw and the 1,200 SKU list.
+
 ## 2026-11-05 Control Tower load time and filters
 - Cause of the slow load: the HR cover check in dfh/hr_api.py used a NOT IN subquery tied to each roster row (about 12 s). Control Tower exceptions and inbox both call it, and the page waited for them, so the KPIs looked frozen when a filter changed. Rewritten as NOT EXISTS on the employee index (0.03 s, same 14 rows). The same fix applies to the roster leave check at hr_api.py line 186.
 - Control Tower now loads in under 1 s of server time (was about 30 s). Test file went from about 3 minutes to 7 seconds.
