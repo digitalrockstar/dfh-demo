@@ -3,7 +3,7 @@
 Full product plan: `docs/DFH_Product_Plan_v1.pdf` (25 pages; source `docs/build_book.py`).
 
 ## Status (5 Nov 2026)
-All modules are built and merged to main. 127 tests, 126 pass, 1 skipped (procurement). Seed runs end to end.
+All modules are built and merged to main. 128 tests, 127 pass, 1 skipped (procurement). Seed runs end to end.
 Browser smoke has not been run for Inventory, Finance, Control Tower and Platform full (no Chromium in the build sandbox). Run `make smoke` locally before any demo.
 
 Bridges closed on 5 Nov 2026:

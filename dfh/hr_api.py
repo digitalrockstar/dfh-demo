@@ -183,7 +183,7 @@ def attach(app, ctx):
         lv = one("select count(*) n, sum(case when lr.applied_on<=:t then 1 else 0 end) aged from leave_request lr join employee e on e.id=lr.employee_id where lr.status='pending'" + el, t=str(TODAY - timedelta(days=AGED_LEAVE_DAYS)), l=sl)
         mp = one("select count(*) n from attendance where status='M' and date>=:a" + wl, a=str(TODAY - timedelta(days=30)), l=sl)["n"]
         gaps = one("select count(*) n from (select r.location_id, r.date from roster r join location l on l.id=r.location_id where l.type='store' and r.date>=:a and r.date<=:b" + wl.replace("location_id", "r.location_id") +
-                   " and r.employee_id not in (select lv.employee_id from leave_request lv where lv.status='approved' and lv.from_date<=r.date and lv.to_date>=r.date) group by r.location_id, r.date having count(*)<%d)" % MIN_COVER["store"], a=str(TODAY), b=str(TODAY + timedelta(days=6)), l=sl)["n"]
+                   " and not exists (select 1 from leave_request lv where lv.employee_id=r.employee_id and lv.status='approved' and lv.from_date<=r.date and lv.to_date>=r.date) group by r.location_id, r.date having count(*)<%d)" % MIN_COVER["store"], a=str(TODAY), b=str(TODAY + timedelta(days=6)), l=sl)["n"]
         res = dict(headcount=on_roll, notice=notice, joining=joining, exits90=exits90, attrition=(exits90 / max(on_roll, 1) * 4) if exits90 else 0.0, by_type=[dict(type=t, n=sum(r["n"] for r in hc if r["type"] == t and r["status"] in ("active", "notice"))) for t in ("office", "store", "warehouse")],
                    att_date=str(y), att=dict(scheduled=sched, present=a["pres"] or 0, absent=a["ab"] or 0, leave=a["lv"] or 0, late=late, pct=(a["pres"] or 0) / sched if sched else None),
                    trend=[dict(date=r["date"], pct=r["pct"]) for r in trend], worst=worst, leave_pending=lv["n"], leave_aged=lv["aged"] or 0, missing_punch=mp, cover_gaps=gaps)
@@ -640,7 +640,7 @@ def attach(app, ctx):
         al = "" if sc is None else " and location_id in (" + ",".join(str(int(x)) for x in sc) + ")"
         gl = "" if sc is None else " and r.location_id in (" + ",".join(str(int(x)) for x in sc) + ")"
         g = many("select l.name, l.city, r.date, count(*) n from roster r join location l on l.id=r.location_id where l.type='store' and r.date>=:a and r.date<=:b" + gl +
-                 " and r.employee_id not in (select lv.employee_id from leave_request lv where lv.status='approved' and lv.from_date<=r.date and lv.to_date>=r.date) group by r.location_id, r.date having count(*)<%d order by r.date" % MIN_COVER["store"], a=str(TODAY), b=str(TODAY + timedelta(days=6)))
+                 " and not exists (select 1 from leave_request lv where lv.employee_id=r.employee_id and lv.status='approved' and lv.from_date<=r.date and lv.to_date>=r.date) group by r.location_id, r.date having count(*)<%d order by r.date" % MIN_COVER["store"], a=str(TODAY), b=str(TODAY + timedelta(days=6)))
         if g:
             names = sorted({x["name"] for x in g})
             out.append(dict(type="hr_cover", severity="high", title=f"{len(names)} stores will have fewer than {MIN_COVER['store']} people on shift this week", detail=f"First gap {parse(g[0]['date']):%a %d %b} at {g[0]['name']}, {g[0]['city']}. Fix the roster or move someone in.", ref="roster"))

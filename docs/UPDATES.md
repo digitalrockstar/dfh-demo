@@ -1,5 +1,12 @@
 # UPDATES (newest first)
 
+## 2026-11-05 Control Tower load time and filters
+- Cause of the slow load: the HR cover check in dfh/hr_api.py used a NOT IN subquery tied to each roster row (about 12 s). Control Tower exceptions and inbox both call it, and the page waited for them, so the KPIs looked frozen when a filter changed. Rewritten as NOT EXISTS on the employee index (0.03 s, same 14 rows). The same fix applies to the roster leave check at hr_api.py line 186.
+- Control Tower now loads in under 1 s of server time (was about 30 s). Test file went from about 3 minutes to 7 seconds.
+- Filters were already correct in the API (7, 30, 90 days, region, city give different numbers). Page now dims the KPIs while loading and drops answers from an older filter change.
+- Test: test_control_tower_is_fast_and_filters_change_numbers in tests/test_bridges.py (128 tests, 127 pass, 1 skipped).
+- No date variable is needed. The demo date (31 Oct 2026) is fixed in dfh/app.py and the seed files.
+
 ## 2026-11-05 Bridges: ledger to demand, demand to PO, POS to Control Tower
 - stockpost.sync_position keeps stock_position.on_hand in step with every posting (stockpost.post and the Module 4 post). The GRN no longer adds on_hand itself (it would double count); it only reduces on_order.
 - Demand: refresh_open recomputes open suggestions whose snapshot differs from the live position (quantity, value, cover days, urgency). A line fully covered closes as status covered. Runs on suggestions, summary, exceptions and before a decision.

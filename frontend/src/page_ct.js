@@ -57,9 +57,12 @@ function overview() {
 
 async function refresh() {
   if (!root || !$("#kpis")) return;
+  const seq = st.seq = (st.seq || 0) + 1; $("#kpis").style.opacity = .5;     // a newer filter change wins; old answers are dropped
   try {
     const q = qs(), f = `region=${encodeURIComponent(st.region)}&city=${encodeURIComponent(st.city)}&fmt=${encodeURIComponent(st.fmt)}`;
     const [s, tr, mix, lg, ex, hd] = await Promise.all([api(`/ct/summary?${q}`), api(`/ct/trend?${q}`), api(`/ct/categories?${q}`), api(`/ct/league?${q}&order=${st.order}&limit=${st.limit}`), api(`/ct/exceptions?${f}`), api(`/ct/headline?${q}`)]);
+    if (seq !== st.seq || !$("#kpis")) return;
+    $("#kpis").style.opacity = 1;
     const c = s.current, dlabel = `vs previous ${s.days} days`;
     $("#asof").textContent = `Data through ${new Date(s.end + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}. Synthetic demo data, tax inclusive sales.`;
     const syncN = ex.filter(e => e.type === "sync").length;
@@ -79,7 +82,7 @@ async function refresh() {
     $("#excn").textContent = `${ex.length} open`;
     mount($("#exc"), html`${ex.slice(0, 8).map(e => html`<div class="exc"><span class="dot ${e.severity}"></span><div><b>${e.title}</b><p>${e.detail}</p></div></div>`)}<button class="btn" data-act="ct-tab" data-v="inbox" style="margin-top:10px">Open the inbox</button>`);
     compare();
-  } catch (e) { if ($("#asof")) $("#asof").textContent = "Could not load: " + e.message; }
+  } catch (e) { if ($("#kpis")) $("#kpis").style.opacity = 1; if ($("#asof")) $("#asof").textContent = "Could not load: " + e.message; }
 }
 
 async function compare() {

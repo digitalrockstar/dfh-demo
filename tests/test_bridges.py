@@ -64,3 +64,16 @@ def test_live_pos_shows_in_control_tower(env):
     assert b["since"] == since and b["bills"] == a["bills"] + 1 and b["net"] == a["net"] + nt and b["top"]
     hist = c.get("/api/ct/summary?days=30", headers=h).json()
     assert hist["end"] == since                                                           # the modelled history is untouched by live bills
+
+
+def test_control_tower_is_fast_and_filters_change_numbers(env):
+    import time
+    c, p = env; h = H(c)
+    t = time.time(); c.get("/api/ct/exceptions", headers=h); c.get("/api/ct/inbox", headers=h)
+    assert time.time() - t < 5, "exceptions and inbox must not scan the roster per row"        # was about 30 s with the NOT IN leave check
+    net = lambda qs: c.get("/api/ct/summary?" + qs, headers=h).json()["current"]["net"]
+    d7, d30, d90 = net("days=7"), net("days=30"), net("days=90")
+    assert d7 < d30 < d90
+    regions = [r for r in c.get("/api/ct/filters", headers=h).json()["regions"]]
+    assert len(regions) > 1 and net("days=30&region=" + regions[0]) != net("days=30&region=" + regions[1]) and net("days=30&region=" + regions[0]) < d30
+    city = c.get("/api/ct/filters", headers=h).json()["cities"][0]; assert net("days=30&city=" + city) < d30
