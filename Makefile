@@ -16,3 +16,6 @@ smoke-pos:
 
 smoke-crm:
 	python scripts/smoke_crm.py
+
+smoke-platform:
+	python scripts/smoke_platform.py
