@@ -258,6 +258,16 @@ def create_app(db_url=None, data_dir=None, serve_frontend=True):
     register_inventory(app, engine, one, many, me, need, audit, NOW)
 
     if serve_frontend:
+        def warm():
+            """Real server only. Pulls the big tables into the OS cache and runs the slowest Control Tower calls once, so the first screen a person opens is not the cold one."""
+            try:
+                for t in ("roster", "attendance", "stock_balance", "stock_ledger", "leave_request", "reorder_suggestion", "forecast"):
+                    one(f"select count(*) n from {t}")
+                exceptions_for(dict(region=None, tier=None, city=None, fmt=None, store_ids=None))
+                an.q("select count(*) from agg")
+            except Exception:
+                pass
+        import threading; threading.Thread(target=warm, daemon=True).start()
         web = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
         app.mount("/", StaticFiles(directory=web, html=True), name="web")
     return app

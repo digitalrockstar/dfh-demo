@@ -1,5 +1,9 @@
 # UPDATES (newest first)
 
+## 2026-11-05 First load
+- Cold costs measured: app start about 4 s (sales data), first Control Tower exceptions call about 5 s (big tables not in the OS cache), warm calls 0.3 s.
+- The real server (not tests) now warms up in a background thread at start: reads the large tables once and runs Control Tower exceptions once. Start the server, wait a few seconds, then open the browser.
+
 ## 2026-11-05 Lag check
 - All parameter-free API calls measured under 1.1 s on the seeded data; slowest are demand min/max (1.1 s), demand forecast (0.9 s) and Control Tower exceptions (0.5 s). Typical page calls are under 0.1 s. The lag the user sees on Windows is therefore mostly in the browser.
 - Glass panels use backdrop-filter blur on every card, which is heavy on integrated GPUs. With the glass slider at 0 the blur is now switched off completely (before it stayed on as blur(0), which still costs a compositing layer).
