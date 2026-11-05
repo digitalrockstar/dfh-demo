@@ -9,7 +9,7 @@ from sqlalchemy import text
 from . import auth
 from .analytics import Analytics
 from .db import get_engine
-from . import wastage_api, demand_api, procurement_api, pos_api, finance_api, ct_api, crm_api, hr_api
+from . import wastage_api, demand_api, procurement_api, pos_api, finance_api, ct_api, crm_api, hr_api, platform_api
 
 NOW = datetime(2026, 10, 31, 9, 0)           # demo "now", matches the seeded data
 STATUSES = ["draft", "active", "restricted", "delisted"]
@@ -86,6 +86,7 @@ def create_app(db_url=None, data_dir=None, serve_frontend=True):
     def login(b: LoginIn):
         u = one("select u.id, u.name, u.password_hash, r.code role from app_user u join role r on r.id=u.role_id where u.username=:n and u.active=1", n=b.username.strip().lower())
         if not u or u["password_hash"] != auth.hash_pw(b.password): raise HTTPException(401, "Wrong username or password")
+        with engine.begin() as c: c.execute(text("update app_user set last_login=:t where id=:i"), dict(t=NOW, i=u["id"]))
         return dict(token=auth.make_token(u["id"]), name=u["name"], role=u["role"])
 
     @app.get("/api/me")
@@ -153,6 +154,7 @@ def create_app(db_url=None, data_dir=None, serve_frontend=True):
             if not ok: raise HTTPException(422, f"{fld} does not apply to this SKU")
             if v <= 0: raise HTTPException(422, "Price must be positive")
             if v / (1 + s["tax_pct"] / 100) <= s["std_cost_paise"]: raise HTTPException(422, "Price is at or below cost after tax")
+            if role == "procurement" and s[fld] and abs(v - s[fld]) / s[fld] >= 0.10: raise HTTPException(422, "A move of 10% or more needs approval. Raise a price request in Platform")
             ch[fld] = v
         if not ch: raise HTTPException(422, "Nothing to change")
         return ch
@@ -202,6 +204,7 @@ def create_app(db_url=None, data_dir=None, serve_frontend=True):
     fa = finance_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW))
     ca = crm_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW))
     ha = hr_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW))
+    platform_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW, sku_import=sku_import, ImportIn=ImportIn, consts=dict(CT_ROLES=CT_ROLES, SKU_WRITE=SKU_WRITE)))
     pa = procurement_api.attach(app, dict(me=me, need=need, many=many, one=one, audit=audit, engine=engine, an=an, NOW=NOW))
     ct = need(CT_ROLES)
 
