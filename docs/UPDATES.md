@@ -1,5 +1,12 @@
 # UPDATES (newest first)
 
+## 2026-11-05 Readiness review
+- Fresh clone of main (e9bdd7c) in a clean venv: seed completes across all modules, 123 tests collected, 122 pass, 1 skipped, 0 fail. Control Tower tests take about 2 minutes.
+- All parameter-free GET endpoints return 200 for the CEO login. Empty by design or minor: platform notifications, SKU duplicates.
+- Not run: browser smoke (Inventory, Finance, Control Tower, Platform full still unverified in a browser).
+- Open bridges: demand stock position not fed by POS or the Module 4 ledger; reorder approval does not create a PO; POS returns do not restock; entity scope not enforced outside Platform.
+- Docs corrected: README run notes and test counts, PLAN status block and build order wording.
+
 ## 2026-11-05 Module 10 Platform
 - Seed (dfh/seed/platform.py, own random stream, also runnable alone with `python -m dfh.seed.platform`): 4 approval rules, 50 requests over six months with 4 open, about 280 audit rows, notifications, 5 import jobs with error reports, and 15k device sync rows from the heartbeats.
 - Approvals (dfh/platform_api.py): two request types on the approval tables. Vendor payment release (pending invoice to released) is banded in rupees, SKU price change (applied on approval) is banded by percent move. Defaults, all assumed: payments up to Rs 5 lakh need finance, above need the CEO; price moves of 10 to 25% need finance, above need the CEO. Bands are editable by CEO or admin with overlap checks. Nobody decides their own request, the CEO can decide in any band, rejection needs a reason, requester can withdraw. Each step writes an audit row and a notification.

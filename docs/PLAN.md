@@ -2,7 +2,19 @@
 
 Full product plan: `docs/DFH_Product_Plan_v1.pdf` (25 pages; source `docs/build_book.py`).
 
-## Build order (module by module, each end to end with tests)
+## Status (5 Nov 2026)
+All modules are built and merged to main. 123 tests, 122 pass, 1 skipped (procurement). Seed runs end to end.
+Browser smoke has not been run for Inventory, Finance, Control Tower and Platform full (no Chromium in the build sandbox). Run `make smoke` locally before any demo.
+
+Known gaps between modules:
+- Demand reads `stock_position`, which only GRN updates. POS sales and the Module 4 ledger do not feed it yet.
+- Approving a reorder suggestion does not create a PO.
+- POS returns do not restock; returns and day close are online only.
+- Entity scope is enforced in Platform only. Approvals cover vendor payment release and SKU price change.
+- Simulated: WhatsApp sends, payments, punches, GSP. No payroll.
+- POS invoice number is 22 characters; GST allows 16. Shorten before any pilot.
+
+## Build order (module by module, each end to end with tests; numbers below are build sequence, not module numbers)
 0. Foundation: schema (95 tables), masters, 6-month seed, theme tokens. DONE.
 0b. App shell, Platform thin slice (login, roles, scope, audit), Module 2 SKU master, Control Tower v0. DONE.
 1. Module 2 SKU master (API, screens, import, price history).
