@@ -129,8 +129,8 @@ textarea.input{width:100%;min-height:130px;font-family:ui-monospace,Menlo,monosp
 .prov.live{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
 .prov.derived{color:var(--primary-text);background:color-mix(in srgb,var(--primary) 14%,transparent)}
 .prov.na{color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
-.donut{position:relative;display:inline-block;line-height:0}.donut svg{display:block;filter:drop-shadow(0 3px 4px var(--shadow))}
-.donut .dc{position:absolute;inset:0;display:grid;place-content:center;text-align:center;line-height:1.15;font-variant-numeric:tabular-nums}
+.donut{position:relative;display:inline-block;line-height:0;max-width:100%}.donut svg{display:block;width:100%;height:auto;overflow:visible}.sg{transition:transform var(--dur-base) var(--ease-spring)}.sg:hover{transform:translateY(-6px)}
+.donut .dc{position:absolute;left:0;right:0;top:40%;transform:translateY(-50%);display:grid;place-content:center;text-align:center;line-height:1.15;pointer-events:none;font-variant-numeric:tabular-nums}
 .donut .dc b{font-size:20px;letter-spacing:-.03em}.donut .dc span{font-size:11px;color:var(--muted)}
 .kpi .v,.num{font-variant-numeric:tabular-nums}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}

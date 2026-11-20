@@ -16,7 +16,7 @@ Tokens: `frontend/src/theme/tokens.css`. Reference: `docs/skills/apple-design.md
 ## Restyle: analytics look on the demo palette
 Reference (read-only): `docs/references/analytics/`. Keep: tones, light/dark/auto, glass slider, POS density.
 - Layers: tray (recess) -> tile (card) -> raised (control). Tokens `--bg-tray`, `--bg-tile`, `--bg-raised`, `--hair`, `--hi`, `--e0`..`--e3`, radii `--r-sm/md/lg`.
-- Charts: thin monotone splines, `--stroke` 1.5px, forecast `--stroke-fc` 1px. Percent-of-100 and part-of-whole use `donut()`, never bars.
+- Charts: thin monotone splines, `--stroke` 1.5px, forecast `--stroke-fc` 1px. Percent-of-100 and part-of-whole use `donut()` (3D extruded, `size` is width in px), never bars.
 - Layout: dashboards use `.bento` (12 columns). POS and tables do not.
 - Provenance: every KPI carries `prov()` (live, sample, derived, na). Demo data is sample unless computed from other data.
 - Motion: `roll()` for KPI changes; easings `--ease-out`, `--ease-inout`, `--ease-spring`; reduced-motion honoured.

@@ -49,13 +49,22 @@ export function spark(vals, w = 90, h = 26, color = "var(--primary)") {
 // Provenance badge. kind: live | sample | derived | na. Demo data is "sample" unless computed from other data ("derived").
 export const prov = (kind = "sample") => raw(`<span class="prov ${kind}" title="${{ live: "Live data", sample: "Sample data", derived: "Derived from other figures", na: "Unavailable" }[kind] || "Sample data"}">${{ live: "Live", sample: "Sample", derived: "Derived", na: "n/a" }[kind] || "Sample"}</span>`);
 
-// Donut for any percent-of-100 or part-of-whole. parts: [{v, color?}] or a single number (0-100). centre: {big, small}.
-export function donut(parts, size = 112, centre = {}) {
-  const arr = typeof parts === "number" ? [{ v: Math.max(0, Math.min(100, parts)), color: "var(--primary)" }, { v: 100 - Math.max(0, Math.min(100, parts)), color: "var(--line)" }] : parts;
-  const tot = arr.reduce((a, x) => a + Math.max(0, x.v), 0) || 1, r = size / 2 - 8, c = 2 * Math.PI * r, pal = ["var(--primary)", "var(--secondary)", "var(--accent)", "var(--ok)", "var(--warn)", "var(--bad)"];
-  let off = 0;
-  const segs = arr.map((x, i) => { const len = Math.max(0, x.v) / tot * c, s = `<circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${x.color || pal[i % pal.length]}" stroke-width="12" stroke-dasharray="${Math.max(0, len - 1.5).toFixed(2)} ${(c - Math.max(0, len - 1.5)).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 ${size / 2} ${size / 2})" stroke-linecap="butt"/>`; off += len; return s; }).join("");
-  return raw(`<div class="donut" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="var(--line)" stroke-width="12" opacity=".5"/>${segs}</svg><div class="dc"><b>${esc(centre.big ?? "")}</b><span>${esc(centre.small ?? "")}</span></div></div>`);
+// 3D donut for any percent-of-100 or part-of-whole (extruded ring, squashed to 0.56, soft floor shadow).
+// parts: [{v, n?, color?}] or one number 0-100 (gauge, shallower). size = width in px. centre: {big, small}.
+let donutId = 0;
+export function donut(parts, size = 132, centre = {}) {
+  const gauge = typeof parts === "number", g = gauge ? Math.max(0, Math.min(100, parts)) : 0;
+  const arr = gauge ? [{ v: g, color: "var(--primary)", n: "Value" }, { v: 100 - g, color: "var(--line)", n: "Rest" }] : parts;
+  const tot = arr.reduce((a, x) => a + Math.max(0, x.v), 0) || 1, R = 70, C = 2 * Math.PI * R, gap = gauge ? 0 : 2.5, dep = gauge ? 9 : 14, id = "dn" + (++donutId);
+  const pal = ["var(--primary)", "var(--secondary)", "color-mix(in srgb,var(--primary) 55%,var(--secondary))", "color-mix(in srgb,var(--primary) 30%,var(--text))", "var(--ok)", "var(--bad)"];   // dfh has primary = accent, so mixes keep segments distinct
+  let off = 0; const arcs = arr.map((x, i) => {
+    const l = Math.max(0, x.v) / tot * C, d = Math.max(0, l - gap), o = off; off += l;
+    return `<circle r="${R}" fill="none" stroke="${x.color || pal[i % pal.length]}" stroke-width="26" stroke-dasharray="${d.toFixed(2)} ${(C - d).toFixed(2)}" stroke-dashoffset="${(-o).toFixed(2)}" transform="rotate(-90)"/>`;
+  });
+  let sides = ""; for (let k = dep; k >= 1; k -= 1.5) sides += `<g transform="translate(0 ${(k / .56).toFixed(2)})">${arcs.join("")}</g>`;
+  const top = arcs.map(a => `<g class="sg">${a}</g>`).join("");
+  const label = arr.map(x => `${x.n || ""} ${Math.round(Math.max(0, x.v) / tot * 1000) / 10}%`).join(", ");
+  return raw(`<div class="donut" style="width:${size}px"><svg viewBox="0 20 220 140" role="img" aria-label="${esc(label)}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".18"/></linearGradient><filter id="${id}b" x="-30%" y="-100%" width="160%" height="300%"><feGaussianBlur stdDeviation="7"/></filter><filter id="${id}d"><feColorMatrix type="matrix" values=".55 0 0 0 0 0 .55 0 0 0 0 0 .55 0 0 0 0 0 1 0"/></filter></defs><ellipse cx="110" cy="${130 + dep}" rx="86" ry="11" fill="#000" opacity=".38" filter="url(#${id}b)"/><g transform="translate(110 76) scale(1 .56)"><g filter="url(#${id}d)">${sides}</g>${top}<circle r="${R}" fill="none" stroke="url(#${id})" stroke-width="26" style="pointer-events:none"/><circle r="${R + 13}" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="1" style="pointer-events:none"/></g></svg><div class="dc"><b>${esc(centre.big ?? "")}</b><span>${esc(centre.small ?? "")}</span></div></div>`);
 }
 
 // Rolling number: animates el's text from its current value to `to` using fmt. Instant under prefers-reduced-motion.
@@ -79,8 +88,8 @@ export function trendChart(el, data, festivals) {
   data.forEach((d, i) => { if (i % step === 0) xl += `<text x="${xs(i)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--muted)">${dmy(d.date)}</text>`; });
   let fest = "";
   festivals.forEach(f => { const i = data.findIndex(d => d.date === f.peak); if (i >= 0) fest += `<line x1="${xs(i)}" x2="${xs(i)}" y1="${T}" y2="${H - B}" stroke="var(--primary)" stroke-width="1.2" stroke-dasharray="4 3" opacity=".7"/><text x="${xs(i) + 4}" y="${T + 11}" font-size="10.5" fill="var(--primary-text)" font-weight="600">${esc(f.name)}</text>`; });
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}"><defs><linearGradient id="ar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--primary)" stop-opacity=".28"/><stop offset="1" stop-color="var(--primary)" stop-opacity="0"/></linearGradient></defs>
-  ${g}${xl}${fest}<path d="${line("net")} L${xs(data.length - 1)},${H - B} L${L},${H - B}Z" fill="url(#ar)"/><path d="${line("net")}" fill="none" stroke="var(--primary)" stroke-opacity=".45" stroke-width="1.2"/>
+  const gid = "ar" + (++donutId); el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--primary)" stop-opacity=".28"/><stop offset="1" stop-color="var(--primary)" stop-opacity="0"/></linearGradient></defs>
+  ${g}${xl}${fest}<path d="${line("net")} L${xs(data.length - 1)},${H - B} L${L},${H - B}Z" fill="url(#${gid})"/><path d="${line("net")}" fill="none" stroke="var(--primary)" stroke-opacity=".45" stroke-width="1.2"/>
   <path d="${line("avg7")}" fill="none" stroke="var(--primary-text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line id="gd" y1="${T}" y2="${H - B}" stroke="var(--text)" stroke-opacity=".25" style="display:none"/>
   <rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent" id="hit"/></svg><div class="tip glass" style="display:none"></div>`;
   const hit = el.querySelector("#hit"), gd = el.querySelector("#gd"), tip = el.querySelector(".tip");

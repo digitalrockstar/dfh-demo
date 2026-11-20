@@ -192,3 +192,9 @@
 - `make smoke` green again. Test-only fixes in `scripts/smoke.py`: Control Tower KPI count scoped to `#kpis .kpi`, wait after the Finance flag filter, close both stacked drawers after the store drill. No app behaviour changed.
 - `--e0` elevation token added. Headless Chromium works here, before shots taken for all 20 smoke pages.
 - Tests: 126 passed, 1 skipped. Working on `main`, one commit per step.
+
+## 2026-11-20 Restyle step 2 ui.js review
+- `donut(parts, size, centre)` rewritten as the reference 3D donut: ring squashed to 0.56, stacked darkened side layers, top gloss, floor shadow, hover lift per segment, aria-label with percentages. A single number draws a shallower gauge. Segment colours come from tone tokens and mixes of them, so tones with primary = accent (dfh) stay distinct.
+- `trendChart` gradient id is now unique per chart (two charts on one page shared `#ar`).
+- `ui.css`: `.donut` sized by width, `.dc` centre label placed at 40% height, `.sg` hover transition. `spark`, `splinePath`, `prov`, `roll` reviewed, unchanged.
+- Tests: 126 passed, 1 skipped. Smoke green.
