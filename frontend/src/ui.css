@@ -165,3 +165,5 @@ textarea.input{width:100%;min-height:130px;font-family:ui-monospace,Menlo,monosp
 .mix{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center}.legend{list-style:none;margin:0;padding:0;display:grid;gap:6px;flex:1;min-width:130px;font-size:13px}
 .legend li{display:grid;grid-template-columns:10px 1fr auto;gap:8px;align-items:center}.legend .sw{width:10px;height:10px;border-radius:50%;display:inline-block}
 @media(max-width:1100px){.kpis.b8{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}}
+/* Restyle step 5e: tabbed pages flatten their .cols pairs into the bento grid */
+.bento>.cols{display:contents}

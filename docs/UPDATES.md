@@ -1,5 +1,12 @@
 # UPDATES (newest first)
 
+## 2026-11-20 Restyle step 5e: Platform
+- `page_platform.js`: `#pbody` is now a 12-column `.bento` on every tab. Approvals: KPIs b12, requests b8, side column b4. Audit: KPIs b12, log b12. Imports: bulk import b8, history b4. Entities and FX: KPIs b12, entities b8, FX b4. Users: two b12 cards. Sync and jobs: KPIs b12, then four b6 cards. Tables, forms and import editor stay solid. Element ids and `data-act` names unchanged.
+- `ui.css`: `.bento>.cols{display:contents}` so the existing `.cols` pairs flatten into the grid with no extra markup.
+- KPI provenance: record counts (approvals, audit events, devices, bills pushed, queue, currencies) = Sample; Net sales 30 days, Payables open, Sync success, Data through = Derived. Devices (online share) and Sync success get gauge rings. KPIs roll on change (`load()` calls `rollKpis`).
+- POS app versions is a donut with legend (share of devices, top 5 plus Other), replacing the count list.
+- Tests: 126 passed, 1 skipped. `make smoke` and `make smoke-platform` green. Screenshots: before `/tmp/before_p/`, after `/tmp/after_p/` (not committed).
+
 ## 2026-11-20 Restyle step 5d: Wastage
 - `page_wastage.js`: 12-column `.bento` (KPIs b12, loss trend b8 + reasons donut b4, locations table b7 solid + top SKUs b5, near expiry b12 solid, recent entries b12 solid). Element ids unchanged.
 - Loss trend is a thin monotone spline pair (total and controllable, 1.5px) over a soft area, replacing bars; hover titles kept. Reasons are a donut with legend (top 5 plus Other when more than 6); the "fixed" tag stays. Top SKUs stay bars (ranked rupee values, not shares).
