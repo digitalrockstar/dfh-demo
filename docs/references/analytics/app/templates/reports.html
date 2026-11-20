@@ -1,0 +1,35 @@
+{% extends "base.html" %}{% block body %}
+<h1>Reports & Settings</h1><p class="sub">CSV reports for the systems your role can open, saved reports built from them, schedules that store snapshots, and the platform settings as they stand today. Settings are read-only here: changes need approval and real identity (Phase 8 rollout). Every export is written to the audit log.</p>
+<div class="tray"><div class="grid">
+<div class="tile kpi c3 dk"><h3>Reports for your role <span class="badge derived">Derived</span></h3><div class="v">{{ reports|length }} of {{ total }}</div><div class="d">each needs its own system permission</div></div>
+<div class="tile kpi c3"><h3>Registered metrics <span class="badge live">Live</span></h3><div class="v">{{ s.n_metrics }}</div><div class="d">definition, grain, unit, source, owner</div></div>
+<div class="tile kpi c3"><h3>Audit entries <span class="badge live">Live</span></h3><div class="v">{{ s.n_audit }}</div><div class="d">exports and access changes</div></div>
+<div class="tile kpi c3"><h3>Role <span class="badge live">Live</span></h3><div class="v" style="font-size:1.1rem">{{ who.name }}</div><div class="d">from the auth stub header</div></div>
+<div class="tile c12"><h3>Report catalog <span class="badge sample">Sample</span></h3><table><tr><th>Report</th><th>System</th><th>Contents</th><th>Rows are</th><th></th><th></th></tr>
+{% for r in reports %}<tr><td>{{ r[1] }}</td><td>{{ r[2] }}</td><td>{{ r[3] }}</td><td><span class="badge {{ r[4] }}">{{ r[4]|capitalize }}</span></td><td><a href="/reports/{{ r[0] }}.csv" download>CSV</a></td><td><a href="/reports/build/{{ r[0] }}">Build</a></td></tr>{% endfor %}</table>
+<div class="note">The last column of every file is provenance. Seed reports stay labelled sample; registry and job history are live platform data.</div></div>
+<div class="tile c12"><h3>Saved reports <span class="badge live">Live</span></h3>{% if defs %}<table><tr><th>Name</th><th>Built from</th><th>Columns</th><th>Filters</th><th>Rows are</th><th>Saved by</th><th></th><th></th><th></th></tr>
+{% for d in defs %}{% set sp = d.spec|fromjson %}<tr><td><a href="/reports/defs/{{ d.def_id }}">{{ d.name }}</a></td><td>{{ bases[d.base][1] }}</td><td>{{ sp.columns|length }}</td><td>{{ sp.filters|length }}</td><td><span class="badge {{ bases[d.base][4] }}">{{ bases[d.base][4]|capitalize }}</span></td><td>{{ d.owner_role }}</td><td><a href="/reports/defs/{{ d.def_id }}.csv" download>CSV</a></td>
+<td>{% if who.role == d.owner_role or who.role == 'admin' %}<form method="post" action="/reports/defs/{{ d.def_id }}/delete" style="display:inline"><button type="submit">Delete</button></form>{% endif %}</td><td></td></tr>{% endfor %}</table>{% else %}<div class="note">None yet. Use Build next to a report above.</div>{% endif %}
+<div class="note">A saved report keeps chosen columns, up to three filters, one sort and a row limit. It adds no new figures, so its rows carry the provenance of the report it is built from, and it needs the same permissions.</div></div>
+<div class="tile c12"><h3>Schedules <span class="badge live">Live</span></h3>{% if scheds %}<table><tr><th>Report</th><th>When (IST)</th><th>Next run</th><th>Last run</th><th>Saved by</th><th></th></tr>
+{% for x in scheds %}<tr><td>{{ x.name }}</td><td>{{ x.cadence }}{% if x.weekday is not none %}, {{ days[x.weekday] }}{% endif %} at {{ '%02d'|format(x.hour) }}:00</td><td>{{ x.next_ts|stamp }}</td><td>{% if x.last %}{{ x.last.ts|stamp }}, {{ x.last.status }}, {{ x.last.rows }} rows{% else %}not yet{% endif %}</td><td>{{ x.owner_role }}</td>
+<td>{% if who.role == x.owner_role or who.role == 'admin' %}<form method="post" action="/reports/schedules/{{ x.sched_id }}/delete" style="display:inline"><button type="submit">Delete</button></form>{% endif %}</td></tr>{% endfor %}</table>{% else %}<div class="note">No schedules.</div>{% endif %}
+<form method="post" action="/reports/schedules"><p class="note"><label>Report <select name="target">{% for t, n in targets %}<option value="{{ t }}">{{ n }}</option>{% endfor %}</select></label>
+<label>Cadence <select name="cadence"><option value="daily">daily</option><option value="weekly">weekly</option></select></label>
+<label>Weekday (weekly) <select name="weekday">{% for d in days %}<option value="{{ loop.index0 }}">{{ d }}</option>{% endfor %}</select></label>
+<label>Hour, IST <input type="number" name="hour" value="7" min="0" max="23" step="1" style="width:4rem"></label>
+<button type="submit">Add schedule</button></p></form>
+<div class="note">The job <code>reports.run</code> checks every 15 minutes. When a slot has passed it stores one CSV snapshot in the platform database (last 7 per schedule) and writes the audit log. Nothing is emailed or sent anywhere: delivery needs a mail or storage setup that needs approval. A missed slot runs once. Snapshots are read with the same permissions as the report, checked again when you open them.</div></div>
+<div class="tile c12"><h3>Snapshots, latest 10 <span class="badge live">Live</span></h3>{% if runs %}<table><tr><th>Report</th><th>Taken</th><th>Status</th><th>Rows</th><th>Rows are</th><th>Note</th><th></th></tr>
+{% for x in runs %}<tr><td>{{ x.name }}</td><td>{{ x.ts|stamp }}</td><td>{{ x.status }}</td><td>{{ x.rows }}</td><td>{% if x.prov %}<span class="badge {{ x.prov }}">{{ x.prov|capitalize }}</span>{% endif %}</td><td>{{ x.note }}</td><td>{% if x.status == 'ok' %}<a href="/reports/runs/{{ x.run_id }}.csv" download>CSV</a>{% endif %}</td></tr>{% endfor %}</table>{% else %}<div class="note">No snapshots yet.</div>{% endif %}</div>
+<div class="tile c8"><h3>Access by role <span class="badge live">Live</span></h3><table><tr><th>Role</th><th>Systems</th></tr>
+{% for key, name, sys in s.matrix %}<tr><td>{{ name }}</td><td>{% if sys is none %}Executive MIS plus the domains granted to the person (header <code>X-DFH-Domains</code>){% else %}{{ sys|sort|join(', ') }}{% endif %}</td></tr>{% endfor %}</table>
+<div class="note">Store managers are location-scoped on Sales & Channels and Products & Inventory only. The role header is a demo stub; production identity is Cloudflare Access (needs approval).</div></div>
+<div class="tile c4"><h3>Engine and jobs <span class="badge live">Live</span></h3><table>
+{% for k, v in s.engine.items() %}<tr><td>{{ k }}</td><td>{{ v }}</td></tr>{% endfor %}
+{% for n, w in s.cadence %}<tr><td>{{ n }}</td><td>{{ w }}</td></tr>{% endfor %}</table>
+<div class="note">Engine settings, not business thresholds. No thresholds are invented.</div></div>
+<div class="tile c12"><h3>Audit log, latest 20 <span class="badge live">Live</span></h3>{% if s.audit %}<table><tr><th>Time</th><th>Role</th><th>Action</th><th>Target</th><th>Detail</th></tr>
+{% for a in s.audit %}<tr><td>{{ a.ts|hhmm }}</td><td>{{ a.role }}</td><td>{{ a.action }}</td><td>{{ a.target }}</td><td>{{ a.detail }}</td></tr>{% endfor %}</table>{% else %}<div class="note">No exports yet.</div>{% endif %}</div>
+</div></div>{% endblock %}

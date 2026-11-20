@@ -1,0 +1,5 @@
+<h2>{{ p.i.title }}</h2>
+<p class="sub"><span class="badge {{ 'neg' if p.i.severity == 'high' else '' }}">{{ p.i.severity|capitalize }}</span> <span class="badge derived">Derived</span> from seed rows, domain {{ p.i.domain }}</p>
+{% if p.facts %}<ul class="feed">{% for l, v, pv, src in p.facts %}<li><span><b>{{ l }}</b><br>{{ v }} <span class="badge {{ pv }}">{{ pv|capitalize }}</span><br><small>{{ src }}</small></span></li>{% endfor %}</ul>{% endif %}
+{% if p.table %}<h3>Evidence <span class="badge sample">Sample</span></h3><table><tr>{% for h in p.table[0] %}<th>{{ h }}</th>{% endfor %}</tr>{% for r in p.table[1] %}<tr>{% for v in r %}<td>{{ v }}</td>{% endfor %}</tr>{% endfor %}</table><small>{{ p.table[3] }}</small>{% endif %}
+{% if p.actions %}<h3>Suggested actions <span class="badge sample">Sample</span></h3><ol class="acts">{% for a in p.actions %}<li><b>{{ a.action }}</b><br><small>{{ a.owner_role }}, due D+{{ a.due_day }}{% if a.cost_paise %}, cost {{ a.cost_paise|inr }}{% endif %}{% if a.protects_paise %}, protects {{ a.protects_paise|inr }}{% endif %}. {{ a.basis }}</small></li>{% endfor %}</ol>{% endif %}

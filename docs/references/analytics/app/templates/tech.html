@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block body %}
+<h1>Technology &amp; IT</h1><p class="sub">Telemetry of this platform itself. Genuinely <span class="badge live">Live</span>.</p>
+<div class="tray"><div class="grid">
+<div class="tile kpi c3 dk"><h3>Uptime <span class="badge live">Live</span></h3><div class="v">{{ stats.uptime // 3600 }}h {{ stats.uptime % 3600 // 60 }}m</div></div>
+<div class="tile kpi c3"><h3>Stream clients <span class="badge live">Live</span></h3><div class="v">{{ stats.clients }}</div></div>
+<div class="tile kpi c3"><h3>Platform events <span class="badge live">Live</span></h3><div class="v">{{ stats.events }}</div></div>
+<div class="tile kpi c3"><h3>DB size <span class="badge live">Live</span></h3><div class="v">{{ stats.seed_kb + stats.ops_kb }} KB</div><div class="d">seed {{ stats.seed_kb }} · ops {{ stats.ops_kb }}</div></div>
+<div class="tile c8"><h3>Job runs <span class="badge live">Live</span></h3><table><tr><th>Job</th><th>Status</th><th>Started</th><th>Detail</th></tr>{% for j in jobs %}<tr><td>{{ j.name }}</td><td>{{ j.status }}</td><td>{{ j.started|hhmm }}</td><td>{{ j.detail }}</td></tr>{% endfor %}</table></div>
+<div class="tile c4 dk"><h3>Metric registry <span class="badge live">Live</span></h3><ul class="feed">{% for m in metrics %}<li><span><b>{{ m.name }}</b><br>{{ m.definition }} Grain: {{ m.grain }}. Owner: {{ m.owner }}.</span></li>{% endfor %}</ul></div>
+</div></div>{% endblock %}

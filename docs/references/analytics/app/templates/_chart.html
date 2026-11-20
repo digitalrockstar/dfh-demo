@@ -1,0 +1,7 @@
+{% macro line(ch, label, unit='inr') %}{% if ch %}<svg viewBox="0 0 {{ ch.w }} {{ ch.h }}" width="100%" role="img" aria-label="{{ label }}">
+{% for y, v in ch.ticks %}<line x1="{{ ch.left }}" x2="{{ ch.w - ch.pad }}" y1="{{ y }}" y2="{{ y }}" stroke="var(--border)" stroke-width="1"/><text x="{{ ch.left - 6 }}" y="{{ y + 4 }}" text-anchor="end" fill="var(--t2)" font-size="11">{{ ('%.0f%%' % v) if unit == 'pct' else (v|round|int|inr) }}</text>{% endfor %}
+{% for p in ch.paths %}<path d="{{ p.d }}" fill="none" stroke="{{ p.color }}" stroke-width="{{ p.width }}"{% if p.dash %} stroke-dasharray="{{ p.dash }}"{% endif %}/>{% endfor %}
+{% if ch.now is not none %}<line x1="{{ ch.now }}" x2="{{ ch.now }}" y1="8" y2="{{ ch.h - ch.pad }}" stroke="var(--t2)" stroke-width="1"/>{% endif %}
+{% for x, t in ch.xl %}<text x="{{ x }}" y="{{ ch.h - 1 }}" text-anchor="middle" fill="var(--t2)" font-size="11">{{ t }}</text>{% endfor %}</svg>
+<ul class="lg" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:6px">{% for p in ch.paths %}<li style="display:flex;gap:6px;align-items:center;padding:0"><svg width="22" height="8" aria-hidden="true"><line x1="0" x2="22" y1="4" y2="4" stroke="{{ p.color }}" stroke-width="{{ p.width }}"{% if p.dash %} stroke-dasharray="{{ p.dash }}"{% endif %}/></svg><span>{{ p.label }}</span></li>{% endfor %}</ul>
+{% else %}<div class="note">Not enough days to draw a trend.</div>{% endif %}{% endmacro %}

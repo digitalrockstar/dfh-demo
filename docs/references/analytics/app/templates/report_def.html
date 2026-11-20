@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block body %}
+<h1>{{ d.name }}</h1><p class="sub">Saved report built from <strong>{{ base[1] }}</strong> by {{ d.owner_role }}. Rows are <span class="badge {{ prov }}">{{ prov|capitalize }}</span> as in the base report. {{ n }} row{{ '' if n == 1 else 's' }}{% if n > rows|length %}, first {{ rows|length }} shown{% endif %}.</p>
+<div class="tray"><div class="grid"><div class="tile c12"><h3>Definition</h3><div class="note">Columns: {{ spec.columns|join(', ') }}.
+{% if spec.filters %} Filters: {% for f in spec.filters %}{{ f.col }} {{ ops[f.op] }} {{ f.val }}{{ '; ' if not loop.last }}{% endfor %}.{% endif %}
+{% if spec.sort %} Sorted by {{ spec.sort.col }} {{ 'descending' if spec.sort.dir == 'desc' else 'ascending' }}.{% endif %} At most {{ spec.limit }} rows.</div>
+<p class="note"><a href="/reports/defs/{{ d.def_id }}.csv" download>Download CSV</a> (logged in the audit log) <a href="/reports">Back to reports</a>
+{% if can_delete %}<form method="post" action="/reports/defs/{{ d.def_id }}/delete" style="display:inline"><button type="submit">Delete</button></form>{% endif %}</p></div>
+<div class="tile c12"><h3>Preview</h3>{% if rows %}<div style="overflow-x:auto"><table><tr>{% for c in cols %}<th>{{ c }}</th>{% endfor %}<th>provenance</th></tr>
+{% for r in rows %}<tr>{% for v in r %}<td>{{ v }}</td>{% endfor %}<td>{{ prov }}</td></tr>{% endfor %}</table></div>{% else %}<div class="note">No rows match these filters.</div>{% endif %}</div></div></div>{% endblock %}

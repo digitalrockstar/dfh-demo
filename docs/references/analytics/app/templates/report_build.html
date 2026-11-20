@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block body %}
+<h1>Build a report</h1><p class="sub">Built from <strong>{{ rep[1] }}</strong>. Pick columns, filters, a sort and a row limit. Nothing is calculated: rows keep the provenance of the base report (<span class="badge {{ rep[4] }}">{{ rep[4]|capitalize }}</span>).</p>
+<div class="tray"><div class="grid"><div class="tile c12">{% if error %}<p class="note" role="alert"><strong>{{ error }}</strong></p>{% endif %}
+<form method="post" action="/reports/defs"><input type="hidden" name="base" value="{{ rid }}">
+<p><label>Name <input type="text" name="name" maxlength="80" required style="width:22rem"></label></p>
+<h3>Columns</h3><p>{% for c in cols %}<label style="margin-right:14px"><input type="checkbox" name="col" value="{{ c }}" checked> {{ c }}</label>{% endfor %}</p>
+<h3>Filters (optional)</h3>{% for i in nf %}<p><select name="f{{ i }}c" aria-label="Filter {{ i }} column"><option value=""></option>{% for c in cols %}<option value="{{ c }}">{{ c }}</option>{% endfor %}</select>
+<select name="f{{ i }}o" aria-label="Filter {{ i }} operator">{% for k, v in ops.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+<input type="text" name="f{{ i }}v" maxlength="100" aria-label="Filter {{ i }} value"></p>{% endfor %}
+<h3>Sort and limit</h3><p><select name="sort" aria-label="Sort column"><option value="">as in the report</option>{% for c in cols %}<option value="{{ c }}">{{ c }}</option>{% endfor %}</select>
+<select name="dir" aria-label="Sort direction"><option value="asc">ascending</option><option value="desc">descending</option></select>
+<label>Rows at most <input type="number" name="limit" value="1000" min="1" max="{{ limit }}" step="1" style="width:6rem"></label></p>
+<p class="note"><button type="submit">Save report</button> <a href="/reports">Back</a> Numbers compare as numbers, text compares ignoring case, dates compare as ISO text. Dates and money follow the base report (calendar dates, INR).</p></form></div></div></div>{% endblock %}
