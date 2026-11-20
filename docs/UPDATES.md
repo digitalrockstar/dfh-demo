@@ -1,5 +1,13 @@
 # UPDATES (newest first)
 
+## 2026-11-20 Restyle step 4: shell
+- `app.js`: left rail (`.side`), sticky top pulse bar (page title, search button, online state, IST clock, insights, appearance, sign out), Cmd/Ctrl+K command palette (pages, theme, tone, actions), collapsible right insight panel (open state in `localStorage` `dfh_panel`; lists `/api/ct/exceptions`, shows a Sample badge; "not available" for roles without access). No new routes or data.
+- `ui.css`, `tokens.css`: shell tokens `--rail-w`, `--rail-w-sm`, `--pulse-h`, `--panel-w`, `--nav-h`. Rail shows number chips only under 1024px, becomes a fixed bottom nav under 768px. Insight panel is a grid column at 1280px and up, an overlay below. Glass slider unchanged.
+- Appearance and sign-out buttons moved from the rail footer to the pulse bar so they stay reachable in the bottom nav. `data-act` names unchanged.
+- `scripts/smoke.py`: new checks for palette, panel toggle, icon rail at 900px, bottom nav at 600px; screenshots 16-18.
+- Tests: 126 passed, 1 skipped. `make smoke`, `smoke-crm`, `smoke-platform` green. `smoke-pos` fails on the offline-tab assertion (`needs a connection`, smoke_pos.py:39), same with and without this change.
+- Open: rail uses number chips, not icons, as no icon set exists in the repo.
+
 ## 2026-11-20 Restyle steps 1-3 (analytics look, demo palette)
 - Tokens: tray/tile/raised surfaces, hairline border, elevation e1-e3, radii 8/14/20, durations and easings added to `tokens.css`. Old `--bg`, `--surface`, `--line`, `--radius` kept as aliases. Tones, modes and glass unchanged.
 - `ui.css`: `.tray`, `.raised`, `.bento` (12 cols, `.b3/.b4/.b6/.b8/.b12`), `.prov` badges, `.donut`, solid surfaces get hairline and inner highlight; reduced-motion and reduced-transparency rules.

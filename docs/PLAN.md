@@ -52,7 +52,7 @@ F8 September input credit mismatch (Karnataka).
 - [x] 2 components in ui.css (tray, raised, bento, prov, donut)
 - [x] 3 chart helpers in ui.js (spline, donut, prov, roll)
 - [x] 2b ui.js review: donut now 3D extruded (matches reference), unique gradient ids in trendChart
-- [ ] 4 shell: left rail, pulse bar, command palette, insight panel, responsive nav
+- [x] 4 shell: left rail, pulse bar, command palette, insight panel, responsive nav
 - [ ] 5 pages, in order: Control Tower, Finance, Demand, Wastage, Platform (bento, donuts, badges)
 - [ ] 6 other pages pick up shared styles; POS tokens only
 - [x] 0 baseline: `scripts/smoke.py` fixed (KPI scope, filter race, stacked drawers), `--e0` added; smoke green

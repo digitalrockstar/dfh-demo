@@ -1,4 +1,4 @@
-import { html, out, raw, esc } from "./ui.js";
+import { html, out, raw, esc, prov } from "./ui.js";
 import { S, api, acts, applyTheme, logout, mount, toast } from "./core.js";
 import * as ct from "./page_ct.js";
 import * as sku from "./page_sku.js";
@@ -41,12 +41,70 @@ if ("serviceWorker" in navigator) addEventListener("load", () => navigator.servi
   } catch (e) { toast(e.message, true); }
 };
 
+const flat = () => NAV.flatMap(g => g[1]);
 function shell() {
-  const u = S.user;
-  mount(root, html`<div class="app"><aside class="side glass"><div class="brand"><div class="mark">DFH</div><div><b>Dry Fruit House</b><span>Operations Platform</span></div></div>
-    <nav class="nav">${NAV.map(([g, items]) => html`<div class="grp">${g}</div>${items.map(([id, l, n, built]) => html`<a href="#/${built ? id : "soon/" + id}" data-id="${id}"><span class="n">${n}</span>${l}${built ? "" : html`<span class="soon">SOON</span>`}</a>`)}`)}</nav>
-    <div class="me"><div class="av">${u.name[0]}</div><div class="t"><b>${u.name}</b><span>${ROLE[u.role] || u.role}</span></div><button class="icon" data-act="settings" aria-label="Appearance" title="Appearance">◐</button><button class="icon" data-act="out" aria-label="Sign out" title="Sign out">⏻</button></div></aside><main id="view"></main></div>`);
+  const u = S.user, open = localStorage.getItem("dfh_panel") === "1";
+  mount(root, html`<div class="app" data-panel="${open ? "open" : "shut"}"><aside class="side glass"><div class="brand"><div class="mark">DFH</div><div class="bt"><b>Dry Fruit House</b><span>Operations Platform</span></div></div>
+    <nav class="nav" aria-label="Modules">${NAV.map(([g, items]) => html`<div class="grp">${g}</div>${items.map(([id, l, n, built]) => html`<a href="#/${built ? id : "soon/" + id}" data-id="${id}" title="${l}"><span class="n">${n}</span><span class="lb">${l}</span>${built ? "" : html`<span class="soon">SOON</span>`}</a>`)}`)}</nav>
+    <div class="me"><div class="av">${u.name[0]}</div><div class="t"><b>${u.name}</b><span>${ROLE[u.role] || u.role}</span></div></div></aside>
+    <div class="col"><header class="pulse glass"><h2 id="ptitle">Control Tower</h2>
+      <button class="raised pbtn" data-act="pal" aria-haspopup="dialog" aria-label="Search or jump to a page"><span>Search or jump to</span><kbd>⌘K</kbd></button>
+      <span class="pstat small muted" role="status"><i class="pdot" id="pdot"></i><span id="pnet">Online</span><span class="num" id="ptime"></span></span>
+      <span class="pbtns"><button class="icon" data-act="ip" aria-controls="ipanel" aria-expanded="${open}" aria-label="Insights" title="Insights">◧</button><button class="icon" data-act="settings" aria-label="Appearance" title="Appearance">◐</button><button class="icon" data-act="out" aria-label="Sign out" title="Sign out">⏻</button></span></header>
+      <main id="view"></main></div>
+    <aside id="ipanel" class="ipanel glass" aria-label="Insights" aria-hidden="${!open}"><div class="iph"><h2>Insights ${prov("sample")}</h2><button class="icon" data-act="ip" aria-label="Close insights">✕</button></div><div id="ipbody" class="ipbody"></div></aside></div>`);
+  pulse(); if (open) loadPanel();
 }
+let clock;
+function pulse() {
+  const t = document.getElementById("ptime"), net = document.getElementById("pnet"), dot = document.getElementById("pdot");
+  const tick = () => { if (t) t.textContent = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }) + " IST"; };
+  const st = () => { const on = navigator.onLine; if (net) net.textContent = on ? "Online" : "Offline"; if (dot) dot.dataset.on = on; };
+  tick(); st(); clearInterval(clock); clock = setInterval(tick, 30000); addEventListener("online", st); addEventListener("offline", st);
+}
+async function loadPanel() {
+  const b = document.getElementById("ipbody"); if (!b || b.dataset.ok) return;
+  try {
+    const ex = await api("/ct/exceptions");
+    mount(b, html`${ex.length ? ex.slice(0, 8).map(e => html`<div class="ipx"><span class="dot ${e.severity}"></span><div><b>${e.title}</b><p>${e.detail}</p></div></div>`) : html`<p class="muted small">Nothing needs attention.</p>`}<a class="btn" href="#/control-tower" style="margin-top:12px;display:inline-block">Open Control Tower</a>`); b.dataset.ok = 1;
+  } catch (e) { mount(b, html`<p class="muted small">Not available for your role.</p>`); }
+}
+acts.ip = () => {
+  const app = document.querySelector(".app"); if (!app) return;
+  const open = app.dataset.panel !== "open"; app.dataset.panel = open ? "open" : "shut"; localStorage.setItem("dfh_panel", open ? "1" : "0");
+  document.getElementById("ipanel").setAttribute("aria-hidden", !open); document.querySelectorAll("[data-act=ip][aria-expanded]").forEach(x => x.setAttribute("aria-expanded", open));
+  if (open) loadPanel();
+};
+// Command palette (Cmd/Ctrl+K)
+const palItems = () => [
+  ...flat().map(([id, l, , built]) => ({ t: l, k: "Go to", run: () => { location.hash = built ? "#/" + id : "#/soon/" + id; } })),
+  ...[["light", "Light"], ["auto", "Auto"], ["dark", "Dark"]].map(([v, l]) => ({ t: "Theme: " + l, k: "Appearance", run: () => acts["set-mode"]({ dataset: { v } }) })),
+  ...["dfh", "ops", "walnut", "pistachio", "indigo"].map(v => ({ t: "Tone: " + v, k: "Appearance", run: () => acts["set-tone"]({ dataset: { v } }) })),
+  { t: "Appearance settings", k: "Action", run: () => acts.settings() }, { t: "Toggle insight panel", k: "Action", run: () => acts.ip() }, { t: "Sign out", k: "Action", run: logout }];
+let palLast = null;
+function palClose() { document.getElementById("pal")?.remove(); palLast?.focus?.(); }
+function palOpen() {
+  if (!S.user || document.getElementById("pal")) return;
+  palLast = document.activeElement; const items = palItems(); let view = [], sel = 0;
+  document.body.insertAdjacentHTML("beforeend", out(html`<div class="palwrap" id="pal"><div class="palbox glass" role="dialog" aria-modal="true" aria-label="Command palette"><input class="input" id="palq" placeholder="Go to a page or run an action" autocomplete="off" role="combobox" aria-expanded="true" aria-controls="pall"><ul id="pall" role="listbox"></ul></div></div>`));
+  const q = document.getElementById("palq"), ul = document.getElementById("pall");
+  const draw = () => {
+    const s = q.value.trim().toLowerCase(); view = items.filter(i => !s || (i.t + " " + i.k).toLowerCase().includes(s)).slice(0, 12); if (sel >= view.length) sel = 0;
+    ul.innerHTML = view.length ? out(html`${view.map((i, n) => html`<li id="pal-${n}" role="option" aria-selected="${n === sel}" data-n="${n}"><span>${i.t}</span><small>${i.k}</small></li>`)}`) : '<li class="none">No match</li>';
+    q.setAttribute("aria-activedescendant", view.length ? "pal-" + sel : "");
+  };
+  const go = n => { const i = view[n]; if (!i) return; palClose(); i.run(); };
+  q.addEventListener("input", () => { sel = 0; draw(); });
+  q.addEventListener("keydown", e => {
+    if (e.key === "Escape") { e.stopPropagation(); palClose(); } else if (e.key === "ArrowDown") { e.preventDefault(); sel = Math.min(sel + 1, view.length - 1); draw(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); sel = Math.max(sel - 1, 0); draw(); } else if (e.key === "Enter") { e.preventDefault(); go(sel); }
+  });
+  ul.addEventListener("click", e => { const li = e.target.closest("li[data-n]"); if (li) go(+li.dataset.n); });
+  document.getElementById("pal").addEventListener("mousedown", e => { if (e.target.id === "pal") palClose(); });
+  draw(); q.focus();
+}
+acts.pal = palOpen;
+document.addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); document.getElementById("pal") ? palClose() : palOpen(); } });
 acts.out = logout;
 acts.settings = () => {
   const old = document.querySelector(".set"); if (old) return old.remove();
@@ -70,6 +128,7 @@ async function route0() {
   if (!S.user) return;
   const [, page = "control-tower", param] = (location.hash || "#/control-tower").split("/");
   document.querySelectorAll(".nav a").forEach(a => a.classList.toggle("on", a.dataset.id === (page === "soon" ? param : page)));
+  const pt = document.getElementById("ptitle"), cur = flat().find(x => x[0] === (page === "soon" ? param : page)); if (pt && cur) pt.textContent = cur[1];
   const v = document.getElementById("view");
   if (page === "skus") { if (!v.dataset.p || v.dataset.p !== "skus") { v.dataset.p = "skus"; await sku.render(v, param); } return; }
   v.dataset.p = page;

@@ -19,5 +19,6 @@ Reference (read-only): `docs/references/analytics/`. Keep: tones, light/dark/aut
 - Charts: thin monotone splines, `--stroke` 1.5px, forecast `--stroke-fc` 1px. Percent-of-100 and part-of-whole use `donut()` (3D extruded, `size` is width in px), never bars.
 - Layout: dashboards use `.bento` (12 columns). POS and tables do not.
 - Provenance: every KPI carries `prov()` (live, sample, derived, na). Demo data is sample unless computed from other data.
+- Shell: rail `.side` (full, number chips under 1024px, bottom nav under 768px), pulse bar `.pulse`, palette `#pal` (Cmd/Ctrl+K), insight panel `#ipanel` (grid column from 1280px, overlay below). Tokens `--rail-w`, `--rail-w-sm`, `--pulse-h`, `--panel-w`, `--nav-h`. Appearance and sign-out live in the pulse bar.
 - Motion: `roll()` for KPI changes; easings `--ease-out`, `--ease-inout`, `--ease-spring`; reduced-motion honoured.
 
