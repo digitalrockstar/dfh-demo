@@ -1,4 +1,4 @@
-import { html, raw, out, inr, pct, num, deltaPill, esc, dmy } from "./ui.js";
+import { html, raw, out, inr, pct, num, deltaPill, esc, dmy, donut, prov, rollKpis, splinePath } from "./ui.js";
 import { api, acts, mount, toast } from "./core.js";
 
 const st = { scope: "chain", key: "", wh: "", cat: "", urgency: "", page: 1, city: "" };
@@ -6,6 +6,8 @@ let root = null, opts = null;
 const SIZE = 12;
 const qty = (q, uom) => uom === "g" ? (q >= 1000 ? num(Math.round(q / 100) / 10) + " kg" : q + " g") : num(q) + " units";
 const lakh = p => inr(p);
+// k: provenance (sample unless computed from other data = derived). ring: 0-100 renders a gauge for percent figures.
+const kpi = (l, v, s, k = "sample", ring = null) => html`<div class="kpi glass"><div class="l">${l}${prov(k)}</div><div class="kpv"><div class="v">${v}</div>${ring == null ? "" : donut(ring, 76)}</div><div class="s">${s}</div></div>`;
 const URG = { critical: ["warn", "Critical"], soon: ["t", "This week"], plan: ["", "Plan"] };
 
 export async function render(el) {
@@ -13,14 +15,14 @@ export async function render(el) {
   opts = await api("/demand/options");
   mount(el, html`<div class="head"><div><div class="eyebrow">Module 6</div><h1>Demand and replenishment</h1><p id="dasof" class="muted">Loading</p></div>
     <div class="row"><select class="input" id="dscope"><option value="chain|">Whole chain</option>${opts.categories.map(c => html`<option value="category|${c.code}">${c.name}</option>`)}${opts.cities.map(c => html`<option value="city|${c}">${c}</option>`)}</select></div></div>
-    <div class="kpis" id="dk">${[1, 2, 3, 4, 5].map(() => html`<div class="kpi glass"><div class="sk" style="height:70px"></div></div>`)}</div>
-    <div class="cols"><div class="card glass"><div class="ct"><h2>Sales: last 12 weeks and the next 8</h2><span class="small muted" id="dscl">Weekly, tax inclusive</span></div><div class="chart" id="dchart"></div></div>
-    <div class="card glass"><div class="ct"><h2>Festival sensitivity</h2><span class="small muted">Learned from sales</span></div><div class="bars wide" id="dbeta"></div><p class="small muted" style="margin-top:10px" id="dcal"></p></div></div>
-    ${opts.can_buy ? html`<div class="card solid" style="margin-bottom:14px"><div class="ct"><h2>Buy suggestions</h2><div class="row"><div class="seg" id="dug"><button data-act="d-urg" data-v="" class="on">All</button><button data-act="d-urg" data-v="critical">Critical</button><button data-act="d-urg" data-v="soon">This week</button><button data-act="d-urg" data-v="plan">Plan</button></div>
+    <div class="bento"><div class="kpis b12" id="dk">${[1, 2, 3, 4, 5].map(() => html`<div class="kpi glass"><div class="sk" style="height:70px"></div></div>`)}</div>
+    <div class="card glass b8"><div class="ct"><h2>Sales: last 12 weeks and the next 8</h2><span class="small muted" id="dscl">Weekly, tax inclusive</span></div><div class="chart" id="dchart"></div></div>
+    <div class="card glass b4"><div class="ct"><h2>Festival sensitivity</h2><span class="small muted">Learned from sales</span></div><div class="bars wide" id="dbeta"></div><p class="small muted" style="margin-top:10px" id="dcal"></p></div>
+    ${opts.can_buy ? html`<div class="card solid b12"><div class="ct"><h2>Buy suggestions</h2><div class="row"><div class="seg" id="dug"><button data-act="d-urg" data-v="" class="on">All</button><button data-act="d-urg" data-v="critical">Critical</button><button data-act="d-urg" data-v="soon">This week</button><button data-act="d-urg" data-v="plan">Plan</button></div>
     <select class="input" id="dwh"><option value="">All warehouses</option>${opts.warehouses.map(w => html`<option value="${w.id}">${w.name}</option>`)}</select><select class="input" id="dcat"><option value="">All categories</option>${opts.categories.map(c => html`<option value="${c.code}">${c.name}</option>`)}</select></div></div><div id="dsug"></div></div>` : ""}
-    <div class="cols eq">${opts.can_buy ? html`<div class="card solid"><div class="ct"><h2>Gift box components</h2><span class="small muted">Next 8 weeks</span></div><div id="dkits"></div></div>` : ""}
-    <div class="card glass"><div class="ct"><h2>How accurate is this</h2><span class="small muted">Backtest on the last 4 weeks</span></div><div id="dacc"></div></div></div>
-    <div class="card solid"><div class="ct"><h2>Store minimum and maximum</h2><select class="input" id="dcity"><option value="">All cities</option>${opts.cities.map(c => html`<option>${c}</option>`)}</select></div><div id="dmm"></div></div>`);
+    ${opts.can_buy ? html`<div class="card solid b6"><div class="ct"><h2>Gift box components</h2><span class="small muted">Next 8 weeks</span></div><div id="dkits"></div></div>` : ""}
+    <div class="card glass ${opts.can_buy ? "b6" : "b12"}"><div class="ct"><h2>How accurate is this</h2><span class="small muted">Backtest on the last 4 weeks</span></div><div id="dacc"></div></div>
+    <div class="card solid b12"><div class="ct"><h2>Store minimum and maximum</h2><select class="input" id="dcity"><option value="">All cities</option>${opts.cities.map(c => html`<option>${c}</option>`)}</select></div><div id="dmm"></div></div></div>`);
   el.querySelector("#dscope").onchange = e => { [st.scope, st.key] = e.target.value.split("|"); loadChart(); };
   if (opts.can_buy) {
     el.querySelector("#dwh").onchange = e => { st.wh = e.target.value; st.page = 1; loadSug(); };
@@ -36,12 +38,12 @@ async function loadTop() {
   const [s, a, f] = await Promise.all([api("/demand/summary"), api("/demand/accuracy"), api("/demand/festivals")]);
   if (!alive("#dk")) return;
   root.querySelector("#dasof").textContent = `Forecast built ${new Date(s.run_at.replace(" ", "T")).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })} from sales through ${new Date(s.cutoff + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "long" })}. Synthetic demo data. Stock position is modelled until Module 4.`;
-  mount(root.querySelector("#dk"), html`
-    <div class="kpi glass"><div class="l">Forecast, next 4 weeks</div><div class="v">${inr(s.next4)}</div><div class="s">${deltaPill(s.delta, " vs last 4 weeks")}</div></div>
-    <div class="kpi glass"><div class="l">Festival peak week</div><div class="v">+${(s.peak_lift * 100).toFixed(0)}%</div><div class="s">Week of ${dmy(s.peak_week)} against the same week with no festival</div></div>
-    <div class="kpi glass"><div class="l">Accuracy by city and category</div><div class="v">${pct(s.accuracy, 0)}</div><div class="s">A flat average scores ${pct(1 - s.wape_flat, 0)}. Store and SKU level is ${pct(1 - s.wape_store_sku, 0)}</div></div>
-    <div class="kpi glass"><div class="l">Open buy suggestions</div><div class="v">${num(s.open)}</div><div class="s">${inr(s.open_value)}. ${num(s.critical)} critical</div></div>
-    <div class="kpi glass"><div class="l">Gift boxes at risk</div><div class="v">${num(s.kits_at_risk)}</div><div class="s">of ${num(s.kits_total)} gift boxes in the forecast</div></div>`);
+  mount(root.querySelector("#dk"), html`${kpi("Forecast, next 4 weeks", inr(s.next4), deltaPill(s.delta, " vs last 4 weeks"), "derived")}
+    ${kpi("Festival peak week", `+${(s.peak_lift * 100).toFixed(0)}%`, `Week of ${dmy(s.peak_week)} against the same week with no festival`, "derived")}
+    ${kpi("Accuracy by city and category", pct(s.accuracy, 0), `A flat average scores ${pct(1 - s.wape_flat, 0)}. Store and SKU level is ${pct(1 - s.wape_store_sku, 0)}`, "derived", s.accuracy == null ? null : s.accuracy * 100)}
+    ${kpi("Open buy suggestions", num(s.open), `${inr(s.open_value)}. ${num(s.critical)} critical`, "derived")}
+    ${kpi("Gift boxes at risk", num(s.kits_at_risk), `of ${num(s.kits_total)} gift boxes in the forecast`, "derived", s.kits_total ? s.kits_at_risk / s.kits_total * 100 : null)}`);
+  rollKpis(root.querySelector("#dk"));
   const mx = Math.max(...a.beta.map(b => b.sensitivity), .01);
   mount(root.querySelector("#dbeta"), html`${a.beta.slice().sort((x, y) => y.sensitivity - x.sensitivity).map(b => html`<div class="r"><span title="${b.name}">${b.name}</span><div class="b"><i style="width:${(b.sensitivity / mx * 100).toFixed(1)}%"></i></div><span class="num r">+${(b.sensitivity * 100).toFixed(0)}%</span></div>`)}`);
   const d = f.calendar.find(x => x.name.startsWith("Diwali"));
@@ -58,14 +60,14 @@ function chart(el, d) {
   const mx = Math.max(...all.map(x => x.upper || x.value)) * 1.08, y = v => T + (1 - v / mx) * (H - T - B);
   let g = ""; for (let i = 0; i <= 4; i++) { const v = mx * i / 4; g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-dasharray="3 4"/><text x="${L - 8}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${esc(inr(v))}</text>`; }
   const na = d.actual.length, fx = d.forecast.map((x, i) => xs(na + i));
-  const act = d.actual.map((x, i) => `${i ? "L" : "M"}${xs(i).toFixed(1)},${y(x.value).toFixed(1)}`).join("");
-  const fl = [d.actual[na - 1] && { x: xs(na - 1), v: d.actual[na - 1].value }, ...d.forecast.map((x, i) => ({ x: fx[i], v: x.value }))].filter(Boolean).map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)},${y(p.v).toFixed(1)}`).join("");
-  const band = d.forecast.length ? d.forecast.map((x, i) => `${i ? "L" : "M"}${fx[i].toFixed(1)},${y(x.upper).toFixed(1)}`).join("") + d.forecast.slice().reverse().map((x, i) => `L${fx[d.forecast.length - 1 - i].toFixed(1)},${y(x.lower).toFixed(1)}`).join("") + "Z" : "";
+  const act = splinePath(d.actual.map((x, i) => [xs(i), y(x.value)]));
+  const fl = splinePath([d.actual[na - 1] && { x: xs(na - 1), v: d.actual[na - 1].value }, ...d.forecast.map((x, i) => ({ x: fx[i], v: x.value }))].filter(Boolean).map(p => [p.x, y(p.v)]));
+  const band = d.forecast.length ? splinePath(d.forecast.map((x, i) => [fx[i], y(x.upper)])) + splinePath(d.forecast.map((x, i) => [fx[i], y(x.lower)]).reverse()).replace(/^M/, "L") + "Z" : "";
   const step = Math.max(1, Math.round(n / 7)), xl = all.map((x, i) => i % step ? "" : `<text x="${xs(i)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(dmy(x.week))}</text>`).join("");
   let lastX = -99; const fest = d.festivals.map(f => { const i = all.findIndex((x, k) => f.peak >= x.week && (k === n - 1 || f.peak < all[k + 1].week)); if (i < 0 || f.peak < all[0].week) return ""; const lab = xs(i) - lastX > 80; if (lab) lastX = xs(i); return `<line x1="${xs(i)}" x2="${xs(i)}" y1="${T}" y2="${H - B}" stroke="var(--primary)" stroke-width="1.2" stroke-dasharray="4 3" opacity=".7"/>${lab ? `<text x="${xs(i) + 4}" y="${T + 11}" font-size="10.5" fill="var(--primary-text)" font-weight="600">${esc(f.name)}</text>` : ""}`; }).join("");
   const sep = `<line x1="${(xs(na - 1) + xs(na)) / 2}" x2="${(xs(na - 1) + xs(na)) / 2}" y1="${T}" y2="${H - B}" stroke="var(--text)" stroke-opacity=".25"/>`;
   const dots = all.map((x, i) => `<circle cx="${xs(i)}" cy="${y(x.value)}" r="9" fill="transparent"><title>${esc(dmy(x.week))}: ${esc(inr(x.value))}${x.a ? " actual" : ` forecast, ${esc(inr(x.lower))} to ${esc(inr(x.upper))}`}</title></circle>`).join("");
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}">${g}${xl}${fest}${sep}<path d="${band}" fill="var(--primary)" fill-opacity=".16"/><path d="${act}" fill="none" stroke="var(--primary-text)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="${fl}" fill="none" stroke="var(--primary)" stroke-width="2.4" stroke-dasharray="6 4" stroke-linecap="round"/>${dots}</svg>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}">${g}${xl}${fest}${sep}<path d="${band}" fill="var(--primary)" fill-opacity=".16"/><path d="${act}" fill="none" stroke="var(--primary-text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="${fl}" fill="none" stroke="var(--primary)" stroke-width="1" stroke-dasharray="5 4" stroke-linecap="round"/>${dots}</svg>`;
 }
 
 async function loadChart() {

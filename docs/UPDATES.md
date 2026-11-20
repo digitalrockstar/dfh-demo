@@ -223,3 +223,10 @@
 - `scripts/smoke.py`: Payables wait selector `#fbody .bars` to `#fbody .donut` (the bars no longer exist). Only test edit.
 - Tests: 126 passed, 1 skipped. Smoke green. Before/after shots in `/tmp/before` and `/tmp/after` (not committed).
 
+## 2026-11-20 Restyle step 5: Demand
+- Bento: KPIs 12, forecast chart 8 and festival sensitivity 4, buy suggestions 12, gift boxes 6 and accuracy 6 (accuracy goes to 12 when the user cannot buy), min/max 12.
+- KPIs carry Derived (all forecast-model outputs). Rings on accuracy (share of 100) and gift boxes at risk (at risk over total).
+- Forecast chart: `splinePath` monotone splines, actual 1.5px, forecast 1px dashed, 80% band closed with splines. Same axes, festivals and tooltips.
+- Festival sensitivity stays as bars: values are lifts (+300% is above 100), a ranked comparison, not a share or part of a whole.
+- No data, route or API change. Tests: 126 passed, 1 skipped. Smoke green, shots `/tmp/after/8_demand.png`.
+
