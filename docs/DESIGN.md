@@ -23,3 +23,4 @@ Reference (read-only): `docs/references/analytics/`. Keep: tones, light/dark/aut
 - Motion: `roll()` for KPI changes; easings `--ease-out`, `--ease-inout`, `--ease-spring`; reduced-motion honoured.
 - Series palette: tokens `--c0`..`--c5` (donut segments and legends). "Other" uses `--muted`, never a status colour.
 - KPI helper pattern (per page): label + `prov()`, value, optional gauge ring for percent figures, sub-line. Call `rollKpis()` after mounting KPI blocks.
+- `donutLegend(parts, fmt, size)` in `ui.js`: donut plus legend for any part-of-whole (ageing, mixes). Bucket colours come from series tokens; status colours only where the bucket is a status (ageing: ok to bad). Grid spans `.b3 .b4 .b5 .b6 .b7 .b8 .b12`; below 1100px all but b3/b4 go full width.

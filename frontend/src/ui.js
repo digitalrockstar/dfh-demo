@@ -76,6 +76,9 @@ export function roll(el, to, fmt = String, ms = 600) {
   requestAnimationFrame(step);
 }
 
+// Donut plus legend for a part-of-whole figure. parts: [{v, n, color?}]; fmt(part) formats the legend value.
+export const donutLegend = (parts, fmt = x => String(x.v), size = 150) => html`<div class="mix">${donut(parts, size)}<ul class="legend">${parts.map((x, i) => html`<li><i class="sw" style="background:${x.color || `var(--c${i % 6})`}"></i><span>${x.n}</span><b class="num">${fmt(x)}</b></li>`)}</ul></div>`;
+
 // Roll KPI values that changed since the last draw of the same KPI (same prefix and suffix only; otherwise the new text just shows).
 const rollSeen = new Map(), NUMRE = /^(\D*?)(-?\d[\d,]*\.?\d*)(.*)$/;
 export function rollKpis(root) {

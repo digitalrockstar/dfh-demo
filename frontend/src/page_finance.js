@@ -1,4 +1,4 @@
-import { html, raw, out, inr, num, esc, dmy } from "./ui.js";
+import { html, raw, out, inr, num, esc, dmy, donut, donutLegend, prov, rollKpis } from "./ui.js";
 import { api, acts, mount, toast, S } from "./core.js";
 
 const st = { tab: "overview", days: 30, period: "2026-09", entity: 1, flagged: 0, source: "", page: 1, jperiod: "2026-09", jentity: 1, jpage: 1 };
@@ -8,9 +8,11 @@ const MON = p => new Date(p + "-01T00:00:00").toLocaleDateString("en-IN", { mont
 const TABS = o => [["overview", "Overview", o.can_cash], ["cash", "Cash and settlements", o.can_cash], ["gst", "GST and input credit", o.can_gst], ["payables", "Payables", o.can_pay], ["journal", "Journal", o.can_gst]].filter(t => t[2]);
 const pill = (t, c) => html`<span class="pill ${c}">${t}</span>`;
 const empty = t => html`<p class="muted small" style="padding:14px 0">${t}</p>`;
-const kpi = (l, v, s) => html`<div class="kpi glass"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+// k: provenance (sample unless computed from other data = derived). ring: 0-100 renders a gauge for percent figures.
+const kpi = (l, v, s, k = "sample", ring = null) => html`<div class="kpi glass"><div class="l">${l}${prov(k)}</div><div class="kpv"><div class="v">${v}</div>${ring == null ? "" : donut(ring, 76)}</div><div class="s">${s}</div></div>`;
 const seg = (id, act, cur, items) => html`<div class="seg" id="${id}">${items.map(([v, l]) => html`<button data-act="${act}" data-v="${v}" class="${String(cur) === String(v) ? "on" : ""}">${l}</button>`)}</div>`;
 const flip = (id, v) => document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle("on", b.dataset.v === String(v)));
+const AGE = { not_due: "var(--ok)", d1_30: "var(--c3)", d31_60: "var(--c1)", d61_90: "var(--c0)", d90_plus: "var(--bad)" };   // ageing escalates from ok to bad
 const DAYS = [[7, "7 days"], [30, "30 days"], [60, "60 days"], [90, "90 days"]];
 
 export async function render(el) {
@@ -28,11 +30,12 @@ function load() {
 
 async function overview() {
   const s = await api(`/finance/summary?days=${st.days}`), c = s.cash, t = s.settlements, r = s.recon;
-  const k = [kpi("Net cash variance", inr(c.net), `${num(c.big)} shortages of ₹1,000 or more, ${c.not_closed} days not closed`), kpi("Settlement gap", inr(t.gap), `${inr(t.transit)} still in transit`),
-    kpi("Open reconciliation items", num(r.n), `${inr(r.v)} unreconciled`)];
-  if (s.payables) k.push(kpi("Input credit at risk", inr(s.itc_at_risk), "Books against GSTR-2B"), kpi("Vendor invoices past due", inr(s.payables.overdue), `${inr(s.payables.total)} open in total`));
-  mount($("#fbody"), html`<div class="row" style="margin-bottom:12px"><span class="small muted">Window</span>${seg("fdays", "f-days", st.days, DAYS)}</div><div class="kpis">${k}</div>
-    ${opts.can_lock ? html`<div class="card solid"><div class="ct"><h2>Month close</h2>${seg("fper", "f-per", st.period, opts.periods.map(p => [p, MON(p)]))}</div><div id="fclose"><div class="sk" style="height:140px"></div></div></div>` : ""}`);
+  const k = [kpi("Net cash variance", inr(c.net), `${num(c.big)} shortages of ₹1,000 or more, ${c.not_closed} days not closed`, "derived"), kpi("Settlement gap", inr(t.gap), `${inr(t.transit)} still in transit`, "derived"),
+    kpi("Open reconciliation items", num(r.n), `${inr(r.v)} unreconciled`, "derived")];
+  if (s.payables) k.push(kpi("Input credit at risk", inr(s.itc_at_risk), "Books against GSTR-2B", "derived"), kpi("Vendor invoices past due", inr(s.payables.overdue), `${inr(s.payables.total)} open in total`, "derived"));
+  mount($("#fbody"), html`<div class="row" style="margin-bottom:12px"><span class="small muted">Window</span>${seg("fdays", "f-days", st.days, DAYS)}</div><div class="bento"><div class="kpis b12" id="fkpis">${k}</div>
+    ${opts.can_lock ? html`<div class="card solid b12"><div class="ct"><h2>Month close</h2>${seg("fper", "f-per", st.period, opts.periods.map(p => [p, MON(p)]))}</div><div id="fclose"><div class="sk" style="height:140px"></div></div></div>` : ""}</div>`);
+  rollKpis($("#fkpis"));
   if (opts.can_lock) closeBoard();
 }
 
@@ -47,13 +50,13 @@ async function closeBoard() {
 async function cash() {
   const [cs, se] = await Promise.all([api(`/finance/cash/stores?days=60&flagged=${st.flagged}`), api(`/finance/settlements?days=${st.days}`)]);
   mount($("#fbody"), html`<div class="row" style="margin-bottom:12px"><span class="small muted">Settlement window</span>${seg("fdays", "f-days", st.days, DAYS)}</div>
-    <div class="cols eq"><div class="card solid"><div class="ct"><h2>Cash shortages by store</h2>${seg("fflag", "f-flag", st.flagged, [[0, "Largest"], [1, "Weekend pattern"]])}</div>
+    <div class="bento"><div class="card solid b6"><div class="ct"><h2>Cash shortages by store</h2>${seg("fflag", "f-flag", st.flagged, [[0, "Largest"], [1, "Weekend pattern"]])}</div>
     <p class="small muted" style="margin-bottom:8px">Last 60 days. A store is flagged when four or more weekend days are short by ₹1,000 or more and they make up most of its shortages. ${cs.flagged} flagged.</p>
     ${cs.rows.length ? html`<div class="tblwrap" style="max-height:360px"><table class="tbl"><thead><tr><th>Store</th><th class="r">Short days</th><th class="r">Weekend</th><th class="r">Short total</th></tr></thead><tbody>${cs.rows.map(r => html`<tr class="click" data-act="f-store" data-id="${r.id}">
       <td>${r.name.replace("Dry Fruit House ", "")}<div class="small muted">${r.city}</div></td><td class="num r">${r.short_days}</td><td class="num r">${r.weekend_short_days}</td><td class="num r">${inr(r.short_total)} ${r.flag ? pill("Pattern", "warn") : ""}</td></tr>`)}</tbody></table></div>` : empty("No shortages in this window.")}</div>
-    <div class="card glass"><div class="ct"><h2>Gateway settlements</h2></div>${se.modes.length ? html`<table class="tbl"><thead><tr><th>Mode</th><th class="r">Expected</th><th class="r">Fees</th><th class="r">Gap</th><th class="r">In transit</th></tr></thead><tbody>${se.modes.map(m => html`<tr><td>${m.mode}</td><td class="num r">${inr(m.expected)}</td><td class="num r">${inr(m.fee)}</td><td class="num r">${inr(m.gap)}<div class="small muted">${m.exceptions} items</div></td><td class="num r">${inr(m.transit)}</td></tr>`)}</tbody></table>
+    <div class="card glass b6"><div class="ct"><h2>Gateway settlements</h2></div>${se.modes.length ? html`<table class="tbl"><thead><tr><th>Mode</th><th class="r">Expected</th><th class="r">Fees</th><th class="r">Gap</th><th class="r">In transit</th></tr></thead><tbody>${se.modes.map(m => html`<tr><td>${m.mode}</td><td class="num r">${inr(m.expected)}</td><td class="num r">${inr(m.fee)}</td><td class="num r">${inr(m.gap)}<div class="small muted">${m.exceptions} items</div></td><td class="num r">${inr(m.transit)}</td></tr>`)}</tbody></table>
     <p class="small muted" style="margin-top:8px">Card fees are assumed at 1.8 percent. UPI carries no fee. Card settles on the second banking day.</p>` : empty("No settlements in this window.")}</div></div>
-    <div class="card solid"><div class="ct"><h2>Reconciliation queue</h2>${seg("fsrc", "f-src", st.source, [["", "All"], ["settlement", "Settlements"], ["day_close", "Cash"]])}</div><div id="frecon"></div></div>`);
+    <div class="card solid b12"><div class="ct"><h2>Reconciliation queue</h2>${seg("fsrc", "f-src", st.source, [["", "All"], ["settlement", "Settlements"], ["day_close", "Cash"]])}</div><div id="frecon"></div></div></div>`);
   recon();
 }
 
@@ -68,10 +71,10 @@ async function recon() {
 async function gst() {
   const o = opts.entities.filter(e => e.state), r = await api(`/finance/gst?entity_id=${st.entity}`);
   mount($("#fbody"), html`<div class="row" style="margin-bottom:12px"><select class="input" id="fent">${o.map(e => html`<option value="${e.id}" ${e.id === st.entity ? "selected" : ""}>${e.name.replace("Dry Fruit House ", "").replace(" (demo)", "")}</option>`)}</select></div>
-    <div class="card solid"><div class="ct"><h2>GSTR-3B working</h2><span class="small muted">Output tax less input credit that GSTR-2B supports</span></div><div class="tblwrap"><table class="tbl"><thead><tr><th>Period</th><th class="r">Output tax</th><th class="r">Input credit</th><th class="r">Net payable</th><th class="r">At risk</th><th>Status</th><th>Due</th></tr></thead><tbody>${r.rows.map(g => html`<tr class="click" data-act="f-gd" data-p="${g.period}">
+    <div class="bento"><div class="card solid b12"><div class="ct"><h2>GSTR-3B working</h2><span class="small muted">Output tax less input credit that GSTR-2B supports</span></div><div class="tblwrap"><table class="tbl"><thead><tr><th>Period</th><th class="r">Output tax</th><th class="r">Input credit</th><th class="r">Net payable</th><th class="r">At risk</th><th>Status</th><th>Due</th></tr></thead><tbody>${r.rows.map(g => html`<tr class="click" data-act="f-gd" data-p="${g.period}">
     <td>${MON(g.period)}</td><td class="num r">${inr(g.output_tax)}</td><td class="num r">${inr(g.claimable)}${g.available ? "" : html`<div class="small muted">books, 2B pending</div>`}</td><td class="num r">${inr(g.net_payable)}</td>
     <td class="num r">${g.at_risk ? html`<b>${inr(g.at_risk)}</b><div class="small muted">${g.missing_n} missing, ${g.mismatch_n} differ</div>` : "None"}</td>
-    <td>${g.locked ? pill("Locked", "active") : g.status === "review" ? pill("On hold", "warn") : g.status === "filed" ? pill("Filed", "active") : pill("Open", "draft")}</td><td>${dmy(g.due)}</td></tr>`)}</tbody></table></div></div>`);
+    <td>${g.locked ? pill("Locked", "active") : g.status === "review" ? pill("On hold", "warn") : g.status === "filed" ? pill("Filed", "active") : pill("Open", "draft")}</td><td>${dmy(g.due)}</td></tr>`)}</tbody></table></div></div></div>`);
   $("#fent").onchange = e => { st.entity = +e.target.value; gst(); };
 }
 
@@ -79,20 +82,21 @@ const drawer = h => { closeAll(); document.body.insertAdjacentHTML("beforeend", 
 const closeAll = () => document.querySelectorAll(".scrim,.drawer,.modal").forEach(n => n.remove());
 
 async function payables() {
-  const p = await api("/finance/payables"), B = [["not_due", "Not yet due"], ["d1_30", "1 to 30 days late"], ["d31_60", "31 to 60 days late"], ["d61_90", "61 to 90 days late"], ["d90_plus", "Over 90 days late"]], mx = Math.max(1, ...B.map(([k]) => p.buckets[k].v));
-  mount($("#fbody"), html`<div class="kpis">${kpi("Open payables", inr(p.total), "Converted at the invoice month rate")}${kpi("Past due", inr(p.overdue), `${B.slice(1).reduce((a, [k]) => a + p.buckets[k].n, 0)} invoices`)}${kpi("Due in 14 days", inr(p.due_next_14), "Plan cash for this")}</div>
-    <div class="cols eq"><div class="card glass"><div class="ct"><h2>Ageing</h2></div><div class="bars wide">${B.map(([k, l]) => html`<div class="r"><span>${l}</span><div class="b"><i style="width:${(p.buckets[k].v / mx * 100).toFixed(1)}%"></i></div><span class="num r">${inr(p.buckets[k].v)}</span></div>`)}</div></div>
-    <div class="card solid"><div class="ct"><h2>Largest vendors</h2></div><table class="tbl"><thead><tr><th>Vendor</th><th class="r">Open</th><th class="r">Past due</th></tr></thead><tbody>${p.vendors.map(v => html`<tr><td>${v.vendor}<div class="small muted">${v.n} invoices</div></td><td class="num r">${inr(v.total)}</td><td class="num r">${v.overdue ? inr(v.overdue) : "None"}</td></tr>`)}</tbody></table></div></div>
-    <div class="card solid"><div class="ct"><h2>Past due invoices</h2></div>${p.overdue_list.length ? html`<table class="tbl"><thead><tr><th>Invoice</th><th>Vendor</th><th>Due</th><th class="r">Late</th><th class="r">Amount</th><th>Status</th></tr></thead><tbody>${p.overdue_list.map(i => html`<tr><td>${i.inv_no}</td><td>${i.vendor}</td><td>${dmy(i.due_date)}</td><td class="num r">${i.overdue_days}d</td><td class="num r">${inr(i.inr)}</td><td>${i.status === "held" ? pill("On hold", "warn") : pill(i.status, "draft")}</td></tr>`)}</tbody></table>` : empty("Nothing is past due.")}</div>`);
+  const p = await api("/finance/payables"), B = [["not_due", "Not yet due"], ["d1_30", "1 to 30 days late"], ["d31_60", "31 to 60 days late"], ["d61_90", "61 to 90 days late"], ["d90_plus", "Over 90 days late"]];
+  mount($("#fbody"), html`<div class="bento"><div class="kpis b12" id="fkpis">${kpi("Open payables", inr(p.total), "Converted at the invoice month rate", "derived")}${kpi("Past due", inr(p.overdue), `${B.slice(1).reduce((a, [k]) => a + p.buckets[k].n, 0)} invoices`, "derived", p.total ? p.overdue / p.total * 100 : null)}${kpi("Due in 14 days", inr(p.due_next_14), "Plan cash for this", "derived")}</div>
+    <div class="card glass b5"><div class="ct"><h2>Ageing</h2><span class="small muted">Share of open payables</span></div>${donutLegend(B.map(([k, l]) => ({ v: p.buckets[k].v, n: l, color: AGE[k] })), x => inr(x.v), 150)}</div>
+    <div class="card solid b7"><div class="ct"><h2>Largest vendors</h2></div><table class="tbl"><thead><tr><th>Vendor</th><th class="r">Open</th><th class="r">Past due</th></tr></thead><tbody>${p.vendors.map(v => html`<tr><td>${v.vendor}<div class="small muted">${v.n} invoices</div></td><td class="num r">${inr(v.total)}</td><td class="num r">${v.overdue ? inr(v.overdue) : "None"}</td></tr>`)}</tbody></table></div></div>
+    <div class="card solid b12"><div class="ct"><h2>Past due invoices</h2></div>${p.overdue_list.length ? html`<table class="tbl"><thead><tr><th>Invoice</th><th>Vendor</th><th>Due</th><th class="r">Late</th><th class="r">Amount</th><th>Status</th></tr></thead><tbody>${p.overdue_list.map(i => html`<tr><td>${i.inv_no}</td><td>${i.vendor}</td><td>${dmy(i.due_date)}</td><td class="num r">${i.overdue_days}d</td><td class="num r">${inr(i.inr)}</td><td>${i.status === "held" ? pill("On hold", "warn") : pill(i.status, "draft")}</td></tr>`)}</tbody></table>` : empty("Nothing is past due.")}</div></div>`);
+  rollKpis($("#fkpis"));
 }
 
 async function journal() {
   const q = `entity_id=${st.jentity}&period=${st.jperiod}`, [tb, j] = await Promise.all([api(`/finance/trial-balance?${q}`), api(`/finance/journal?${q}&page=${st.jpage}&size=12`)]), pages = Math.max(1, Math.ceil(j.total / j.size));
   mount($("#fbody"), html`<div class="row" style="margin-bottom:12px"><select class="input" id="jent">${opts.entities.map(e => html`<option value="${e.id}" ${e.id === st.jentity ? "selected" : ""}>${e.name.replace("Dry Fruit House ", "").replace(" (demo)", "")}</option>`)}</select>
     <select class="input" id="jper">${opts.periods.map(p => html`<option value="${p}" ${p === st.jperiod ? "selected" : ""}>${MON(p)}</option>`)}</select><button class="btn" data-act="f-export">Download CSV</button></div>
-    <div class="cols eq"><div class="card solid"><div class="ct"><h2>Trial balance</h2><span class="small muted">${tb.debit === tb.credit ? "Debits equal credits" : "Out of balance"}</span></div><table class="tbl"><thead><tr><th>Account</th><th class="r">Debit</th><th class="r">Credit</th></tr></thead><tbody>${tb.rows.filter(r => r.dr || r.cr).map(r => html`<tr><td>${r.code} ${r.name}</td><td class="num r">${r.dr ? inr(r.dr) : ""}</td><td class="num r">${r.cr ? inr(r.cr) : ""}</td></tr>`)}
+    <div class="bento"><div class="card solid b6"><div class="ct"><h2>Trial balance</h2><span class="small muted">${tb.debit === tb.credit ? "Debits equal credits" : "Out of balance"}</span></div><table class="tbl"><thead><tr><th>Account</th><th class="r">Debit</th><th class="r">Credit</th></tr></thead><tbody>${tb.rows.filter(r => r.dr || r.cr).map(r => html`<tr><td>${r.code} ${r.name}</td><td class="num r">${r.dr ? inr(r.dr) : ""}</td><td class="num r">${r.cr ? inr(r.cr) : ""}</td></tr>`)}
     <tr><td><b>Total</b></td><td class="num r"><b>${inr(tb.debit)}</b></td><td class="num r"><b>${inr(tb.credit)}</b></td></tr></tbody></table></div>
-    <div class="card solid"><div class="ct"><h2>Vouchers</h2><span class="small muted">${num(j.total)} in the period</span></div><table class="tbl"><thead><tr><th>Voucher</th><th>Date</th><th class="r">Amount</th></tr></thead><tbody>${j.items.map(i => html`<tr class="click" data-act="f-jv" data-id="${i.id}"><td>${i.jv_no}<div class="small muted">${i.narration}</div></td><td>${dmy(i.date)}</td><td class="num r">${inr(i.amount)}</td></tr>`)}</tbody></table>
+    <div class="card solid b6"><div class="ct"><h2>Vouchers</h2><span class="small muted">${num(j.total)} in the period</span></div><table class="tbl"><thead><tr><th>Voucher</th><th>Date</th><th class="r">Amount</th></tr></thead><tbody>${j.items.map(i => html`<tr class="click" data-act="f-jv" data-id="${i.id}"><td>${i.jv_no}<div class="small muted">${i.narration}</div></td><td>${dmy(i.date)}</td><td class="num r">${inr(i.amount)}</td></tr>`)}</tbody></table>
     <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn sm" data-act="f-jpage" data-v="-1" ${st.jpage <= 1 ? "disabled" : ""}>Previous</button><span class="small muted">Page ${st.jpage} of ${pages}</span><button class="btn sm" data-act="f-jpage" data-v="1" ${st.jpage >= pages ? "disabled" : ""}>Next</button></div></div></div>`);
   $("#jent").onchange = e => { st.jentity = +e.target.value; st.jpage = 1; journal(); };
   $("#jper").onchange = e => { st.jperiod = e.target.value; st.jpage = 1; journal(); };

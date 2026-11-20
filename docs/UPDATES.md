@@ -214,3 +214,12 @@
 - `trendChart` gradient id is now unique per chart (two charts on one page shared `#ar`).
 - `ui.css`: `.donut` sized by width, `.dc` centre label placed at 40% height, `.sg` hover transition. `spark`, `splinePath`, `prov`, `roll` reviewed, unchanged.
 - Tests: 126 passed, 1 skipped. Smoke green.
+
+## 2026-11-20 Restyle step 5: Finance
+- All five tabs use `.bento`. KPIs carry provenance: Derived for sums, gaps, counts and past-due figures. Payables "Past due" shows a ring (share of open payables). Overview KPIs have no ring, five cards are too narrow.
+- Payables ageing bars replaced by `donutLegend()` (new helper in `ui.js`). Buckets escalate ok, c3, c1, c0, bad.
+- `ui.css`: added `.b5` and `.b7` spans. `rollKpis()` on Overview and Payables KPIs.
+- Tables, forms, drawers and modals stay solid. No data, route or API change.
+- `scripts/smoke.py`: Payables wait selector `#fbody .bars` to `#fbody .donut` (the bars no longer exist). Only test edit.
+- Tests: 126 passed, 1 skipped. Smoke green. Before/after shots in `/tmp/before` and `/tmp/after` (not committed).
+

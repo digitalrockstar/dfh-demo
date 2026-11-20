@@ -122,9 +122,9 @@ textarea.input{width:100%;min-height:130px;font-family:ui-monospace,Menlo,monosp
 .raised:hover{box-shadow:var(--e3),inset 0 1px 0 var(--hi)}.raised:active{transform:scale(.98);box-shadow:var(--e1)}
 .card,.kpi{border-radius:var(--r-lg)}
 .bento{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;margin-bottom:16px}.bento>*{min-width:0}
-.b3{grid-column:span 3}.b4{grid-column:span 4}.b6{grid-column:span 6}.b8{grid-column:span 8}.b12{grid-column:span 12}
-@media(max-width:1100px){.b3,.b4{grid-column:span 6}.b6,.b8{grid-column:span 12}}
-@media(max-width:640px){.b3,.b4,.b6,.b8{grid-column:span 12}}
+.b3{grid-column:span 3}.b4{grid-column:span 4}.b5{grid-column:span 5}.b6{grid-column:span 6}.b7{grid-column:span 7}.b8{grid-column:span 8}.b12{grid-column:span 12}
+@media(max-width:1100px){.b3,.b4{grid-column:span 6}.b5,.b6,.b7,.b8{grid-column:span 12}}
+@media(max-width:640px){.b3,.b4,.b5,.b6,.b7,.b8{grid-column:span 12}}
 .prov{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:650;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;border:1px solid var(--hair);color:var(--muted);background:color-mix(in srgb,var(--text) 5%,transparent)}
 .prov.live{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
 .prov.derived{color:var(--primary-text);background:color-mix(in srgb,var(--primary) 14%,transparent)}
