@@ -19,5 +19,5 @@
 /* Depth + motion tokens (restyle). Layering: tray (recess) -> tile (card) -> raised (control). Old --bg/--surface/--line/--radius stay as aliases. */
 :root{--r-sm:8px;--r-md:14px;--r-lg:20px;--dur-fast:120ms;--dur-base:220ms;--dur-slow:420ms;--ease-out:cubic-bezier(.16,1,.3,1);--ease-inout:cubic-bezier(.65,0,.35,1);--ease-spring:var(--ease);--stroke:1.5px;--stroke-fc:1px;
  --bg-tray:color-mix(in srgb,var(--bg) 93%,var(--text) 7%);--bg-tile:var(--surface);--bg-raised:color-mix(in srgb,var(--surface) 95%,var(--primary) 5%);--hair:color-mix(in srgb,var(--line) 80%,transparent);
- --e1:0 1px 2px var(--shadow);--e2:0 1px 2px var(--shadow),0 8px 18px -6px var(--shadow);--e3:0 2px 4px var(--shadow),0 18px 36px -10px var(--shadow)}
+ --e0:none;--e1:0 1px 2px var(--shadow);--e2:0 1px 2px var(--shadow),0 8px 18px -6px var(--shadow);--e3:0 2px 4px var(--shadow),0 18px 36px -10px var(--shadow)}
 [data-mode=light]{--hi:rgba(255,255,255,.75)}[data-mode=dark]{--hi:rgba(255,255,255,.07)}

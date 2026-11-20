@@ -14,10 +14,10 @@ try:
         pg.on("console", lambda m: errs.append(m.text) if m.type == "error" and "422" not in m.text else None); pg.on("pageerror", lambda e: errs.append(str(e)))
         pg.goto(f"http://127.0.0.1:{PORT}/"); pg.wait_for_selector("#u"); pg.screenshot(path=f"{OUT}/1_login.png")
         pg.click("[data-act=do-login]"); pg.wait_for_selector(".kpi .v"); pg.wait_for_selector("#league tbody tr"); pg.wait_for_selector("#exc .exc"); pg.wait_for_timeout(700)
-        assert pg.locator(".kpi").count() == 5 and pg.locator("#trend svg path").count() >= 3
+        assert pg.locator("#kpis .kpi").count() == 5 and pg.locator("#trend svg path").count() >= 3
         pg.screenshot(path=f"{OUT}/2_control_tower.png")
         pg.click("[data-act=ct-days][data-v='7']"); pg.wait_for_timeout(900); pg.click("[data-act=ct-ord][data-v=bottom]"); pg.wait_for_timeout(900)
-        pg.click("#league tbody tr.click >> nth=0"); pg.wait_for_selector(".drawer .kpi .v"); pg.click(".drawer tr.click >> nth=0"); pg.wait_for_selector(".drawer h1"); pg.keyboard.press("Escape"); pg.wait_for_timeout(300)   # Control Tower drill (not run in the build sandbox)
+        pg.click("#league tbody tr.click >> nth=0"); pg.wait_for_selector(".drawer .kpi .v"); pg.click(".drawer tr.click >> nth=0"); pg.wait_for_selector(".drawer h1"); pg.keyboard.press("Escape"); pg.wait_for_timeout(300); pg.keyboard.press("Escape"); pg.wait_for_selector(".drawer", state="detached")   # Control Tower drill: two stacked drawers (not run in the build sandbox)
         pg.click("[data-act=ct-tab][data-v=inbox]"); pg.wait_for_selector("[data-ct-status]"); pg.click("[data-act=ct-tab][data-v=wh]"); pg.wait_for_selector("#ctbody .tbl tbody tr"); pg.screenshot(path=f"{OUT}/2b_ct_warehouses.png")
         pg.click("[data-act=ct-tab][data-v=overview]"); pg.wait_for_selector("#cmp .tbl")
         pg.goto(f"http://127.0.0.1:{PORT}/#/skus"); pg.wait_for_selector(".tbl tbody tr.click"); pg.screenshot(path=f"{OUT}/3_skus.png")
@@ -55,7 +55,7 @@ try:
         pg.click("[data-act=p-mv][data-v=ready]"); pg.wait_for_timeout(800); pg.screenshot(path=f"{OUT}/13_procurement_match.png")
         pg.goto(f"http://127.0.0.1:{PORT}/#/finance"); pg.wait_for_selector("#fclose .tbl tbody tr"); pg.wait_for_timeout(500); assert pg.locator(".kpi").count() == 5
         pg.screenshot(path=f"{OUT}/14_finance_close.png", full_page=True)
-        pg.click("[data-act=f-tab][data-v=cash]"); pg.wait_for_selector("#frecon .tbl tbody tr"); pg.click("[data-act=f-flag][data-v='1']"); pg.wait_for_selector("tr[data-act=f-store]"); assert pg.locator("tr[data-act=f-store]").count() == 1
+        pg.click("[data-act=f-tab][data-v=cash]"); pg.wait_for_selector("#frecon .tbl tbody tr"); pg.click("[data-act=f-flag][data-v='1']"); pg.wait_for_timeout(900); pg.wait_for_selector("tr[data-act=f-store]"); assert pg.locator("tr[data-act=f-store]").count() == 1
         pg.click("tr[data-act=f-store]"); pg.wait_for_selector(".drawer .tbl"); pg.screenshot(path=f"{OUT}/15_finance_cash.png"); pg.keyboard.press("Escape"); pg.wait_for_selector(".drawer", state="detached")
         pg.click("[data-act=f-res] >> nth=0"); pg.wait_for_selector("#fnote"); pg.click(".modal [data-act=f-close] >> nth=0"); pg.wait_for_selector(".modal", state="detached")
         pg.click("[data-act=f-tab][data-v=gst]"); pg.wait_for_selector("tr[data-act=f-gd]"); pg.click("tr[data-act=f-gd][data-p='2026-09']"); pg.wait_for_selector(".drawer .tbl"); pg.screenshot(path=f"{OUT}/16_finance_gst.png"); pg.keyboard.press("Escape")

@@ -54,5 +54,5 @@ F8 September input credit mismatch (Karnataka).
 - [ ] 4 shell: left rail, pulse bar, command palette, insight panel, responsive nav
 - [ ] 5 pages, in order: Control Tower, Finance, Demand, Wastage, Platform (bento, donuts, badges)
 - [ ] 6 other pages pick up shared styles; POS tokens only
-- [ ] fix stale `scripts/smoke.py` KPI count (5 vs 12)
+- [x] 0 baseline: `scripts/smoke.py` fixed (KPI scope, filter race, stacked drawers), `--e0` added; smoke green
 

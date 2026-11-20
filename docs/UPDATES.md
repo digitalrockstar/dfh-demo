@@ -187,3 +187,8 @@
 - Plan PDF v1 (25 pages) and context docs added.
 - Decisions: return policy 10 days for defective or damaged; GST and GSP on hold with stated assumptions; 6-month history now, 24 months later.
 - Next: Module 2 SKU master end to end.
+
+## 2026-11-20 Restyle step 1 baseline
+- `make smoke` green again. Test-only fixes in `scripts/smoke.py`: Control Tower KPI count scoped to `#kpis .kpi`, wait after the Finance flag filter, close both stacked drawers after the store drill. No app behaviour changed.
+- `--e0` elevation token added. Headless Chromium works here, before shots taken for all 20 smoke pages.
+- Tests: 126 passed, 1 skipped. Working on `main`, one commit per step.
