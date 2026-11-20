@@ -1,4 +1,4 @@
-import { html, raw, out, inr, pct, num, deltaPill, trendChart, spark, dmy } from "./ui.js";
+import { html, raw, out, inr, pct, num, deltaPill, trendChart, spark, donut, prov, rollKpis, dmy } from "./ui.js";
 import { api, acts, mount, toast, S } from "./core.js";
 
 const PERIODS = [[7, "7 days"], [30, "30 days"], [90, "90 days"], [184, "6 months"]];
@@ -10,7 +10,10 @@ const $ = s => document.querySelector(s);
 const qs = () => `days=${st.days}&region=${encodeURIComponent(st.region)}&city=${encodeURIComponent(st.city)}&fmt=${encodeURIComponent(st.fmt)}`;
 const seg = (id, act, cur, items) => html`<div class="seg" id="${id}">${items.map(([v, l]) => html`<button data-act="${act}" data-v="${v}" class="${String(cur) === String(v) ? "on" : ""}">${l}</button>`)}</div>`;
 const flip = (id, v) => document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle("on", b.dataset.v === String(v)));
-const kpi = (l, v, s) => html`<div class="kpi glass"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+// k: provenance (sample unless computed from other data = derived, or read from live POS = live). ring: 0-100 renders a gauge for percent figures.
+const kpi = (l, v, s, k = "sample", ring = null) => html`<div class="kpi glass"><div class="l">${l}${prov(k)}</div><div class="kpv"><div class="v">${v}</div>${ring == null ? "" : donut(ring, 76)}</div><div class="s">${s}</div></div>`;
+const mixDonut = (mix, n = 5) => { const top = mix.slice(0, n), rest = mix.slice(n).reduce((a, m) => a + m.share, 0), parts = top.map(m => ({ v: m.share * 100, n: m.name })).concat(rest > 0 ? [{ v: rest * 100, n: "Other", color: "var(--muted)" }] : []);
+  return html`<div class="mix">${donut(parts, 150)}<ul class="legend">${parts.map((x, i) => html`<li><i class="sw" style="background:${x.color || `var(--c${i % 6})`}"></i><span>${x.n}</span><b class="num">${pct(x.v / 100)}</b></li>`)}</ul></div>`; };
 const pill = (t, c) => html`<span class="pill ${c}">${t}</span>`;
 const empty = t => html`<p class="muted small" style="padding:14px 0">${t}</p>`;
 const pts = x => x == null ? raw('<span class="d fl">n/a</span>') : raw(`<span class="d ${x >= 0 ? "up" : "dn"}">${x >= 0 ? "+" : ""}${(x * 100).toFixed(1)} pts</span>`);
@@ -40,14 +43,13 @@ function overview() {
     <select class="input" id="fmt">${FORMATS.map(([v, l]) => html`<option value="${v}" ${st.fmt === v ? "selected" : ""}>${l}</option>`)}</select>
     <select class="input" id="sv"><option value="">Saved views</option>${vs.map((v, i) => html`<option value="${i}">${v.name}</option>`)}</select>
     <button class="btn" data-act="ct-save-view">Save view</button><button class="btn" data-act="ct-snap">Morning summary</button></div>
-    <div class="kpis" id="kpis">${[1, 2, 3, 4, 5].map(() => html`<div class="kpi glass"><div class="sk" style="height:70px"></div></div>`)}</div>
-    <div class="kpis" id="kpis2"></div>
-    <div class="kpis" id="kpis3"></div>
-    <div class="cols"><div class="card glass"><div class="ct"><h2>Net sales by day</h2><span class="small muted">Thick line is the 7-day average. Dashed lines mark festival peaks.</span></div><div class="chart" id="trend"></div></div>
-    <div class="card glass"><div class="ct"><h2>Category mix</h2><span class="small muted">Share of net sales</span></div><div class="bars" id="mix"></div></div></div>
-    <div class="card glass" style="margin-bottom:16px"><div class="ct"><h2>Period compare</h2><div class="row">${seg("cmpm", "ct-cmp", st.cmp, [["wow", "Week on week"], ["mom", "Month on month"]])}${seg("lfl", "ct-lfl", st.lfl, [[1, "Like for like"], [0, "All stores"]])}</div></div><div id="cmp"></div></div>
-    <div class="cols eq"><div class="card solid"><div class="ct"><h2>Store league</h2><div class="row">${seg("ord", "ct-ord", st.order, [["top", "Top"], ["bottom", "Bottom"]])}${seg("lim", "ct-lim", st.limit, [[10, "10"], [25, "25"], [50, "50"]])}</div></div><div id="league"></div></div>
-    <div class="card glass"><div class="ct"><h2>Exceptions</h2><span class="small muted" id="excn"></span></div><div id="exc"></div></div></div>`);
+    <div class="bento"><div class="kpis b12" id="kpis">${[1, 2, 3, 4, 5].map(() => html`<div class="kpi glass"><div class="sk" style="height:70px"></div></div>`)}</div>
+    <div class="card glass b8"><div class="ct"><h2>Net sales by day</h2><span class="small muted">Thick line is the 7-day average. Dashed lines mark festival peaks.</span></div><div class="chart" id="trend"></div></div>
+    <div class="card glass b4"><div class="ct"><h2>Category mix</h2><span class="small muted">Share of net sales</span></div><div id="mix"></div></div>
+    <div class="kpis b8" id="kpis2"></div><div class="kpis b4" id="kpis3"></div>
+    <div class="card glass b12"><div class="ct"><h2>Period compare</h2><div class="row">${seg("cmpm", "ct-cmp", st.cmp, [["wow", "Week on week"], ["mom", "Month on month"]])}${seg("lfl", "ct-lfl", st.lfl, [[1, "Like for like"], [0, "All stores"]])}</div></div><div id="cmp"></div></div>
+    <div class="card solid b8"><div class="ct"><h2>Store league</h2><div class="row">${seg("ord", "ct-ord", st.order, [["top", "Top"], ["bottom", "Bottom"]])}${seg("lim", "ct-lim", st.limit, [[10, "10"], [25, "25"], [50, "50"]])}</div></div><div id="league"></div></div>
+    <div class="card glass b4"><div class="ct"><h2>Exceptions</h2><span class="small muted" id="excn"></span></div><div id="exc"></div></div></div>`);
   const on = (id, k) => { $(id).onchange = e => { st[k] = e.target.value; refresh(); }; };
   on("#reg", "region"); on("#cty", "city"); on("#fmt", "fmt");
   $("#sv").onchange = e => { const v = vs[+e.target.value]; if (!v) return; Object.assign(st, v.st); overview(); };
@@ -67,16 +69,17 @@ async function refresh() {
     $("#asof").textContent = `Data through ${new Date(s.end + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}. Synthetic demo data, tax inclusive sales.`;
     const syncN = ex.filter(e => e.type === "sync").length;
     mount($("#kpis"), html`${kpi("Net sales", inr(c.net), deltaPill(s.delta.net, " " + dlabel))}
-      ${kpi("Gross margin", pct(c.gm), html`${pts(s.delta.gm)} ex tax, at standard cost`)}
-      ${kpi("Net sales per store per day", inr(c.per_store_day), deltaPill(s.delta.per_store_day, " " + dlabel))}
+      ${kpi("Gross margin", pct(c.gm), html`${pts(s.delta.gm)} ex tax, at standard cost`, "derived", c.gm == null ? null : c.gm * 100)}
+      ${kpi("Net sales per store per day", inr(c.per_store_day), deltaPill(s.delta.per_store_day, " " + dlabel), "derived")}
       ${kpi("Stockout events", num(s.stockouts.events), `${num(s.stockouts.days)} store-SKU days lost across ${num(s.stockouts.stores)} stores`)}
-      ${kpi("Stores not syncing", syncN, `${num(c.stores)} stores selling in this period`)}`);
-    mount($("#kpis2"), html`${kpi("Gross margin after wastage", pct(hd.gm_after_wastage), `Wastage is ${pct(hd.wastage_pct_sales, 2)} of sales, ${inr(hd.wastage_cost)} at cost`)}
+      ${kpi("Stores not syncing", syncN, `${num(c.stores)} stores selling in this period`, "derived")}`);
+    mount($("#kpis2"), html`${kpi("Gross margin after wastage", pct(hd.gm_after_wastage), `Wastage is ${pct(hd.wastage_pct_sales, 2)} of sales, ${inr(hd.wastage_cost)} at cost`, "derived", hd.gm_after_wastage == null ? null : hd.gm_after_wastage * 100)}
       ${kpi("Store stock at cost", inr(hd.store_stock_cost), hd.warehouse_stock_cost ? `Warehouses hold ${inr(hd.warehouse_stock_cost)}` : "Your store only")}
-      ${kpi("Stock cover", hd.cover_days == null ? "n/a" : `${hd.cover_days.toFixed(0)} days`, "Store stock over daily cost of goods sold")}`);
-    api("/ct/live-pos").then(l => { if (!$("#kpis3")) return; mount($("#kpis3"), html`${kpi("Live POS bills", num(l.bills), l.bills ? `${inr(l.net)} across ${num(l.stores)} store${l.stores > 1 ? "s" : ""}${l.review ? `, ${num(l.review)} to review` : ""}` : `None yet after ${l.since}. Bills rung up at the POS appear here.`)}`); }).catch(() => {});
+      ${kpi("Stock cover", hd.cover_days == null ? "n/a" : `${hd.cover_days.toFixed(0)} days`, "Store stock over daily cost of goods sold", "derived")}`);
+    rollKpis($("#kpis")); rollKpis($("#kpis2"));
+    api("/ct/live-pos").then(l => { if (!$("#kpis3")) return; mount($("#kpis3"), html`${kpi("Live POS bills", num(l.bills), l.bills ? `${inr(l.net)} across ${num(l.stores)} store${l.stores > 1 ? "s" : ""}${l.review ? `, ${num(l.review)} to review` : ""}` : `None yet after ${l.since}. Bills rung up at the POS appear here.`, "live")}`); }).catch(() => {});
     const draw = () => { const t = $("#trend"); if (t) trendChart(t, tr, s.festivals); }; window.__ctTrend = draw; draw();
-    mount($("#mix"), html`${mix.map(m => html`<div class="r"><span>${m.name}</span><div class="b"><i style="width:${(m.share / mix[0].share * 100).toFixed(1)}%"></i></div><span class="num r">${pct(m.share)} <span class="muted small">GM ${pct(m.gm, 0)}</span></span></div>`)}`);
+    mount($("#mix"), mixDonut(mix));
     mount($("#league"), html`<div class="tblwrap" style="max-height:420px"><table class="tbl"><thead><tr><th>#</th><th>Store</th><th>City</th><th class="r">Per day</th><th class="r">GM</th><th class="r">Change</th></tr></thead><tbody>
       ${lg.rows.map((r, i) => html`<tr class="click" data-act="ct-store" data-id="${r.id}"><td class="muted">${i + 1}</td><td><b>${r.name.replace("Dry Fruit House ", "")}</b><div class="small muted">${r.code}${r.new ? " · new store" : ""}</div></td><td>${r.city}</td><td class="r">${inr(r.per_day)}</td><td class="r">${pct(r.gm, 0)}</td><td class="r">${r.vs_prev == null ? raw('<span class="muted">n/a</span>') : deltaPill(r.vs_prev)}</td></tr>`)}</tbody></table></div><p class="small muted" style="margin-top:8px">Ranked on net sales per trading day, ${num(lg.total)} stores in view. Select a store to drill down. New stores are left out of the bottom list.</p>`);
     $("#excn").textContent = `${ex.length} open`;
@@ -89,9 +92,9 @@ async function compare() {
   const el = $("#cmp"); if (!el) return;
   const r = await api(`/ct/compare?mode=${st.cmp}&lfl=${st.lfl}&region=${encodeURIComponent(st.region)}&city=${encodeURIComponent(st.city)}&fmt=${encodeURIComponent(st.fmt)}`).catch(e => ({ err: e.message }));
   if (r.err) return mount(el, empty(r.err));
-  mount(el, html`<div class="kpis"><div class="kpi"><div class="l">${dmy(r.start)} to ${dmy(r.end)}</div><div class="v">${inr(r.net)}</div><div class="s">${deltaPill(r.change, ` vs ${dmy(r.prev_start)} to ${dmy(r.prev_end)}`)}</div></div>
-    <div class="kpi"><div class="l">Gross margin</div><div class="v">${pct(r.gm)}</div><div class="s">${pts(r.gm == null || r.gm_prev == null ? null : r.gm - r.gm_prev)}</div></div>
-    <div class="kpi"><div class="l">Stores in compare</div><div class="v">${r.stores == null ? "All" : num(r.stores)}</div><div class="s">${r.like_for_like ? "Like for like" : "Includes new stores"}</div></div></div>
+  mount(el, html`<div class="kpis"><div class="kpi"><div class="l">${dmy(r.start)} to ${dmy(r.end)}${prov("sample")}</div><div class="v">${inr(r.net)}</div><div class="s">${deltaPill(r.change, ` vs ${dmy(r.prev_start)} to ${dmy(r.prev_end)}`)}</div></div>
+    <div class="kpi"><div class="l">Gross margin${prov("derived")}</div><div class="kpv"><div class="v">${pct(r.gm)}</div>${r.gm == null ? "" : donut(r.gm * 100, 76)}</div><div class="s">${pts(r.gm == null || r.gm_prev == null ? null : r.gm - r.gm_prev)}</div></div>
+    <div class="kpi"><div class="l">Stores in compare${prov("derived")}</div><div class="v">${r.stores == null ? "All" : num(r.stores)}</div><div class="s">${r.like_for_like ? "Like for like" : "Includes new stores"}</div></div></div>
     <div class="tblwrap"><table class="tbl"><thead><tr><th>Category</th><th class="r">Net sales</th><th class="r">Change</th><th class="r">GM</th></tr></thead><tbody>${r.categories.map(c => html`<tr><td>${c.name}</td><td class="r">${inr(c.net)}</td><td class="r">${deltaPill(c.change)}</td><td class="r">${pct(c.gm, 1)} ${c.gm_prev == null ? "" : pts(c.gm - c.gm_prev)}</td></tr>`)}</tbody></table></div><p class="small muted" style="margin-top:8px">${r.note}</p>`);
 }
 
@@ -100,11 +103,11 @@ acts["ct-store"] = async a => {
   try {
     const d = await api(`/ct/store/${a.dataset.id}?days=${st.days}`), c = d.current, p = d.previous;
     drawer(html`<h1>${d.store.name.replace("Dry Fruit House ", "")}</h1><p class="muted small">${d.store.code} · ${d.store.city} · ${d.store.format}. Last ${d.days} days.${d.store.last_sync_at ? " Last sync " + d.store.last_sync_at.slice(0, 16).replace("T", " ") + "." : ""}</p>
-      <div class="kpis">${kpi("Net sales", inr(c.net), deltaPill(p && p.net ? c.net / p.net - 1 : null))}${kpi("Gross margin", pct(c.gm), "ex tax")}${kpi("Per trading day", inr(c.per_store_day), `${c.store_days} days`)}${kpi("Wastage", inr(d.wastage_cost), "at cost, same period")}</div>
+      <div class="kpis">${kpi("Net sales", inr(c.net), deltaPill(p && p.net ? c.net / p.net - 1 : null))}${kpi("Gross margin", pct(c.gm), "ex tax", "derived", c.gm == null ? null : c.gm * 100)}${kpi("Per trading day", inr(c.per_store_day), `${c.store_days} days`, "derived")}${kpi("Wastage", inr(d.wastage_cost), "at cost, same period")}</div>
       <div class="card solid"><div class="ct"><h2>Daily net sales</h2></div>${raw(spark(d.trend.map(x => x.net), 640, 60))}</div>
       ${d.exceptions.length ? html`<div class="card solid"><div class="ct"><h2>Open exceptions</h2></div>${d.exceptions.map(e => html`<div class="exc"><span class="dot ${e.severity}"></span><div><b>${e.title}</b><p>${e.detail}</p></div></div>`)}</div>` : ""}
       <div class="card solid"><div class="ct"><h2>Top SKUs</h2><span class="small muted">Select one to see its daily sales</span></div><div class="tblwrap"><table class="tbl"><thead><tr><th>SKU</th><th>Category</th><th class="r">Net sales</th></tr></thead><tbody>${d.top_skus.map(k => html`<tr class="click" data-act="ct-sku" data-s="${d.store.id}" data-k="${k.id}"><td>${k.name}</td><td class="muted">${k.cat}</td><td class="r">${inr(k.net)}</td></tr>`)}</tbody></table></div></div>
-      <div class="card solid"><div class="ct"><h2>Category mix</h2></div>${d.mix.slice(0, 6).map(m => html`<div class="r" style="display:flex;justify-content:space-between;padding:3px 0"><span>${m.name}</span><span class="num">${pct(m.share)}</span></div>`)}</div>
+      <div class="card solid"><div class="ct"><h2>Category mix</h2></div>${mixDonut(d.mix, 5)}</div>
       <div class="card solid"><div class="ct"><h2>Stockouts</h2></div>${d.stockouts.length ? d.stockouts.map(x => html`<div class="small" style="padding:3px 0">${x.name}, ${dmy(x.start)} to ${dmy(x.end)}</div>`) : empty("No stockouts in this period.")}</div>
       <div class="card solid"><div class="ct"><h2>Recent bills</h2></div>${d.bills.length ? html`<table class="tbl"><tbody>${d.bills.map(b => html`<tr><td>${b.invoice_no}</td><td>${dmy(b.business_date)}</td><td class="r">${inr(b.net_paise, false)}</td><td>${b.status}</td></tr>`)}</tbody></table>` : empty(d.bills_note)}</div>`);
   } catch (e) { toast(e.message, true); }
@@ -113,7 +116,7 @@ acts["ct-sku"] = async a => {
   try {
     const d = await api(`/ct/store/${a.dataset.s}/sku/${a.dataset.k}?days=60`), q = d.sku.base_uom === "g" ? (x => `${(x / 1000).toFixed(1)} kg`) : (x => `${x} units`);
     drawer(html`<h1>${d.sku.name}</h1><p class="muted small">${d.store.name.replace("Dry Fruit House ", "")}, ${d.store.city}. Last ${d.days} days.</p>
-      <div class="kpis">${kpi("Units sold", q(d.daily.reduce((s, x) => s + x.qty, 0)), "")}${kpi("Net sales", inr(d.daily.reduce((s, x) => s + x.net, 0)), "")}${kpi("On hand now", d.on_hand ? q(d.on_hand) : "None recorded", "")}</div>
+      <div class="kpis">${kpi("Units sold", q(d.daily.reduce((s, x) => s + x.qty, 0)), "")}${kpi("Net sales", inr(d.daily.reduce((s, x) => s + x.net, 0)), "")}${kpi("On hand now", d.on_hand ? q(d.on_hand) : "None recorded", "", d.on_hand ? "sample" : "na")}</div>
       <div class="card solid"><div class="ct"><h2>Daily sales</h2></div>${raw(spark(d.daily.map(x => x.net), 640, 60))}</div>
       <div class="card solid"><div class="ct"><h2>Stockouts</h2></div>${d.stockouts.length ? d.stockouts.map(x => html`<div class="small" style="padding:3px 0">${dmy(x.start)} to ${dmy(x.end)}</div>`) : empty("None in this period.")}</div>
       <div class="card solid"><div class="ct"><h2>Wastage entries</h2></div>${d.wastage.length ? html`<table class="tbl"><tbody>${d.wastage.map(w => html`<tr><td>${dmy(w.ts.slice(0, 10))}</td><td>${w.reason}</td><td class="r">${inr(w.cost_paise, false)}</td><td>${w.status}</td></tr>`)}</tbody></table>` : empty("No loss recorded for this SKU in this store.")}</div>`);

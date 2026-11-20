@@ -23,3 +23,5 @@
 [data-mode=light]{--hi:rgba(255,255,255,.75)}[data-mode=dark]{--hi:rgba(255,255,255,.07)}
 /* Shell tokens */
 :root{--rail-w:252px;--rail-w-sm:68px;--pulse-h:52px;--panel-w:320px;--nav-h:64px}
+/* Series palette for donuts and legends (dfh has primary = accent, so mixes keep segments distinct) */
+:root{--c0:var(--primary);--c1:var(--secondary);--c2:color-mix(in srgb,var(--primary) 55%,var(--secondary));--c3:color-mix(in srgb,var(--primary) 30%,var(--text));--c4:var(--ok);--c5:var(--bad)}

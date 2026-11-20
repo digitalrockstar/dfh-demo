@@ -56,7 +56,7 @@ export function donut(parts, size = 132, centre = {}) {
   const gauge = typeof parts === "number", g = gauge ? Math.max(0, Math.min(100, parts)) : 0;
   const arr = gauge ? [{ v: g, color: "var(--primary)", n: "Value" }, { v: 100 - g, color: "var(--line)", n: "Rest" }] : parts;
   const tot = arr.reduce((a, x) => a + Math.max(0, x.v), 0) || 1, R = 70, C = 2 * Math.PI * R, gap = gauge ? 0 : 2.5, dep = gauge ? 9 : 14, id = "dn" + (++donutId);
-  const pal = ["var(--primary)", "var(--secondary)", "color-mix(in srgb,var(--primary) 55%,var(--secondary))", "color-mix(in srgb,var(--primary) 30%,var(--text))", "var(--ok)", "var(--bad)"];   // dfh has primary = accent, so mixes keep segments distinct
+  const pal = [0, 1, 2, 3, 4, 5].map(k => `var(--c${k})`);   // series palette lives in tokens.css (--c0..--c5)
   let off = 0; const arcs = arr.map((x, i) => {
     const l = Math.max(0, x.v) / tot * C, d = Math.max(0, l - gap), o = off; off += l;
     return `<circle r="${R}" fill="none" stroke="${x.color || pal[i % pal.length]}" stroke-width="26" stroke-dasharray="${d.toFixed(2)} ${(C - d).toFixed(2)}" stroke-dashoffset="${(-o).toFixed(2)}" transform="rotate(-90)"/>`;
@@ -74,6 +74,19 @@ export function roll(el, to, fmt = String, ms = 600) {
   const t0 = performance.now();
   const step = t => { const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(from + (to - from) * e); if (k < 1) requestAnimationFrame(step); };
   requestAnimationFrame(step);
+}
+
+// Roll KPI values that changed since the last draw of the same KPI (same prefix and suffix only; otherwise the new text just shows).
+const rollSeen = new Map(), NUMRE = /^(\D*?)(-?\d[\d,]*\.?\d*)(.*)$/;
+export function rollKpis(root) {
+  if (!root) return;
+  root.querySelectorAll(".kpi").forEach(k => {
+    const l = k.querySelector(".l")?.firstChild?.textContent, v = k.querySelector(".v"); if (!l || !v) return;
+    const key = (root.id || "") + l, to = v.textContent, from = rollSeen.get(key); rollSeen.set(key, to);
+    const a = NUMRE.exec(from || ""), b = NUMRE.exec(to); if (!a || !b || a[1] !== b[1] || a[3] !== b[3] || from === to) return;
+    const d = (b[2].split(".")[1] || "").length, f = x => b[1] + x.toLocaleString("en-IN", { minimumFractionDigits: d, maximumFractionDigits: d }) + b[3];
+    v.dataset.v = parseFloat(a[2].replace(/,/g, "")); roll(v, parseFloat(b[2].replace(/,/g, "")), f);
+  });
 }
 
 export function trendChart(el, data, festivals) {

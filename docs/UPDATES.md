@@ -1,5 +1,13 @@
 # UPDATES (newest first)
 
+## 2026-11-20 Restyle step 5a: Control Tower
+- `page_ct.js`: overview is a 12-column `.bento` (KPIs b12, trend b8 + category donut b4, second KPI row b8 + live POS b4, compare b12, league b8 + exceptions b4). Element ids unchanged. Inbox and Warehouses tabs keep solid tables.
+- Every KPI carries `prov()`: Net sales, Stockout events, Store stock at cost, Wastage = Sample; Gross margin, per store per day, Stores not syncing, GM after wastage, Stock cover = Derived; Live POS bills = Live; On hand = n/a when none recorded. `kpi()` takes provenance and an optional 0-100 `ring` (gauge donut) for percent figures (gross margin, GM after wastage, compare GM).
+- Category mix (page and store drawer) is a donut with legend (top 5 plus Other), replacing bars. Drawer sparklines now use the spline helper.
+- `ui.js`: new `rollKpis(root)` rolls changed KPI values (same prefix and suffix only, instant under reduced motion). `donut()` palette read from new tokens `--c0`..`--c5` in `tokens.css`.
+- `ui.css`: `.kpv`, `.legend`, `.mix`, bento KPI rows.
+- Tests: 126 passed, 1 skipped. `make smoke` green. Screenshots: before `/tmp/before/2_control_tower.png`, after `/tmp/after/2_control_tower.png`.
+
 ## 2026-11-20 Restyle step 4: shell
 - `app.js`: left rail (`.side`), sticky top pulse bar (page title, search button, online state, IST clock, insights, appearance, sign out), Cmd/Ctrl+K command palette (pages, theme, tone, actions), collapsible right insight panel (open state in `localStorage` `dfh_panel`; lists `/api/ct/exceptions`, shows a Sample badge; "not available" for roles without access). No new routes or data.
 - `ui.css`, `tokens.css`: shell tokens `--rail-w`, `--rail-w-sm`, `--pulse-h`, `--panel-w`, `--nav-h`. Rail shows number chips only under 1024px, becomes a fixed bottom nav under 768px. Insight panel is a grid column at 1280px and up, an overlay below. Glass slider unchanged.

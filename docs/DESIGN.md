@@ -21,4 +21,5 @@ Reference (read-only): `docs/references/analytics/`. Keep: tones, light/dark/aut
 - Provenance: every KPI carries `prov()` (live, sample, derived, na). Demo data is sample unless computed from other data.
 - Shell: rail `.side` (full, number chips under 1024px, bottom nav under 768px), pulse bar `.pulse`, palette `#pal` (Cmd/Ctrl+K), insight panel `#ipanel` (grid column from 1280px, overlay below). Tokens `--rail-w`, `--rail-w-sm`, `--pulse-h`, `--panel-w`, `--nav-h`. Appearance and sign-out live in the pulse bar.
 - Motion: `roll()` for KPI changes; easings `--ease-out`, `--ease-inout`, `--ease-spring`; reduced-motion honoured.
-
+- Series palette: tokens `--c0`..`--c5` (donut segments and legends). "Other" uses `--muted`, never a status colour.
+- KPI helper pattern (per page): label + `prov()`, value, optional gauge ring for percent figures, sub-line. Call `rollKpis()` after mounting KPI blocks.
