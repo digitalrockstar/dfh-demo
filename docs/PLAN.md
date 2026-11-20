@@ -46,3 +46,13 @@ near-expiry action, finance close, WhatsApp order, ownership and pilot path.
 F1 high-shrink warehouse (Hyderabad), F2 vendor price creep, F3 Pune stockouts on almonds and cashews, F4 weekend cash shortage
 (one Mumbai store), F5 three stores not syncing, F6 dried pineapple expiry in kiosks, F7 Diwali gift box component shortage,
 F8 September input credit mismatch (Karnataka).
+
+## Restyle (analytics look)
+- [x] 1 tokens (depth, motion, aliases)
+- [x] 2 components in ui.css (tray, raised, bento, prov, donut)
+- [x] 3 chart helpers in ui.js (spline, donut, prov, roll)
+- [ ] 4 shell: left rail, pulse bar, command palette, insight panel, responsive nav
+- [ ] 5 pages, in order: Control Tower, Finance, Demand, Wastage, Platform (bento, donuts, badges)
+- [ ] 6 other pages pick up shared styles; POS tokens only
+- [ ] fix stale `scripts/smoke.py` KPI count (5 vs 12)
+

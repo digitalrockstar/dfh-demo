@@ -1,5 +1,13 @@
 # UPDATES (newest first)
 
+## 2026-11-20 Restyle steps 1-3 (analytics look, demo palette)
+- Tokens: tray/tile/raised surfaces, hairline border, elevation e1-e3, radii 8/14/20, durations and easings added to `tokens.css`. Old `--bg`, `--surface`, `--line`, `--radius` kept as aliases. Tones, modes and glass unchanged.
+- `ui.css`: `.tray`, `.raised`, `.bento` (12 cols, `.b3/.b4/.b6/.b8/.b12`), `.prov` badges, `.donut`, solid surfaces get hairline and inner highlight; reduced-motion and reduced-transparency rules.
+- `ui.js`: `splinePath` (monotone cubic), `spark` and `trendChart` now 1.5px splines, `donut()`, `prov()`, `roll()` added. Helpers exist but pages do not use `donut`, `prov`, `roll` yet.
+- Issue: `make smoke` fails at baseline too: `scripts/smoke.py` asserts 5 `.kpi` on Control Tower, the page now renders 12. Not caused by the restyle; probe shows 3 trend paths and no console errors. Left as is.
+- Tests: 126 passed, 1 skipped.
+- Next: step 4, shell (pulse bar, command palette, insight panel, responsive rail).
+
 ## 2026-11-05 First load
 - Cold costs measured: app start about 4 s (sales data), first Control Tower exceptions call about 5 s (big tables not in the OS cache), warm calls 0.3 s.
 - The real server (not tests) now warms up in a background thread at start: reads the large tables once and runs Control Tower exceptions once. Start the server, wait a few seconds, then open the browser.
