@@ -25,3 +25,4 @@ Reference (read-only): `docs/references/analytics/`. Keep: tones, light/dark/aut
 - KPI helper pattern (per page): label + `prov()`, value, optional gauge ring for percent figures, sub-line. Call `rollKpis()` after mounting KPI blocks.
 - `donutLegend(parts, fmt, size)` in `ui.js`: donut plus legend for any part-of-whole (ageing, mixes). Bucket colours come from series tokens; status colours only where the bucket is a status (ageing: ok to bad). Grid spans `.b3 .b4 .b5 .b6 .b7 .b8 .b12`; below 1100px all but b3/b4 go full width.
 - Bars are kept only for ranked comparisons of non-share values (lifts, counts). Shares of 100 and parts of a whole are donuts.
+- Percent KPIs get a ring only when the value reads on a 0-100 scale; a figure that is normally a few percent (loss against COGS) stays a plain number.

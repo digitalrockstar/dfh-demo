@@ -1,5 +1,12 @@
 # UPDATES (newest first)
 
+## 2026-11-20 Restyle step 5d: Wastage
+- `page_wastage.js`: 12-column `.bento` (KPIs b12, loss trend b8 + reasons donut b4, locations table b7 solid + top SKUs b5, near expiry b12 solid, recent entries b12 solid). Element ids unchanged.
+- Loss trend is a thin monotone spline pair (total and controllable, 1.5px) over a soft area, replacing bars; hover titles kept. Reasons are a donut with legend (top 5 plus Other when more than 6); the "fixed" tag stays. Top SKUs stay bars (ranked rupee values, not shares).
+- KPI provenance: Lost stock at cost and Awaiting approval = Sample; Store loss against COGS, Controllable share, Expired or expiring = Derived. Controllable share has a gauge ring. Store loss against COGS has no ring (under 2 percent of COGS, a ring would show a sliver). KPIs roll on change.
+- `scripts/smoke.py`: wastage chart check now counts spline paths and legend rows (was bar rects and bar rows).
+- Tests: 126 passed, 1 skipped. `make smoke` green. Screenshots: before `/tmp/before_w/6_wastage.png`, after `/tmp/after_w/6_wastage.png` (not committed).
+
 ## 2026-11-20 Restyle step 5a: Control Tower
 - `page_ct.js`: overview is a 12-column `.bento` (KPIs b12, trend b8 + category donut b4, second KPI row b8 + live POS b4, compare b12, league b8 + exceptions b4). Element ids unchanged. Inbox and Warehouses tabs keep solid tables.
 - Every KPI carries `prov()`: Net sales, Stockout events, Store stock at cost, Wastage = Sample; Gross margin, per store per day, Stores not syncing, GM after wastage, Stock cover = Derived; Live POS bills = Live; On hand = n/a when none recorded. `kpi()` takes provenance and an optional 0-100 `ring` (gauge donut) for percent figures (gross margin, GM after wastage, compare GM).
