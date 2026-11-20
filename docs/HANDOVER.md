@@ -1,6 +1,6 @@
 # HANDOVER (overwritten each session; states no facts, links only)
-State: restyle on branch merged to main, steps 1-3 done (tokens, CSS, chart helpers). Pages do not use donut/prov/roll yet.
-Tests: `make test` 126 passed, 1 skipped. `make smoke` red at baseline (stale KPI count), see UPDATES 2026-11-20.
+State: analytics-look restyle complete on main (steps 1-7).
+Tests: `make test`, `make smoke`, `make smoke-pos`, `make smoke-crm`, `make smoke-platform` all green at last run.
 Half-done: nothing uncommitted.
-Next task: step 4, shell. See docs/PLAN.md "Restyle".
-Links: docs/DESIGN.md "Restyle", docs/UPDATES.md, reference docs/references/analytics/.
+Next task: visual review by the owner on real devices; any polish goes in small commits.
+Links: docs/PLAN.md "Restyle", docs/DESIGN.md "Restyle", docs/UPDATES.md (2026-11-20 entries), reference docs/references/analytics/.

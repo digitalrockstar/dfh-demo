@@ -27,3 +27,5 @@ Reference (read-only): `docs/references/analytics/`. Keep: tones, light/dark/aut
 - Bars are kept only for ranked comparisons of non-share values (lifts, counts). Shares of 100 and parts of a whole are donuts.
 - Percent KPIs get a ring only when the value reads on a 0-100 scale; a figure that is normally a few percent (loss against COGS) stays a plain number.
 - Tabbed pages (Platform): `#pbody` is the bento; legacy `.cols` wrappers use `display:contents` and their children carry the `bN` span.
+
+- Restyle scope final: bento on Control Tower, Finance, Demand, Wastage, Platform only. Other pages inherit surfaces and charts from shared styles. POS uses tokens only. Tables, forms, drawers, modals stay solid.

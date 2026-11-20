@@ -244,3 +244,9 @@
 - Festival sensitivity stays as bars: values are lifts (+300% is above 100), a ranked comparison, not a share or part of a whole.
 - No data, route or API change. Tests: 126 passed, 1 skipped. Smoke green, shots `/tmp/after/8_demand.png`.
 
+
+## 2026-11-20 Restyle step 5 (Platform check) and step 6: other pages, POS
+- Platform (b8f8914) reviewed: bento, badges, rings, versions donut present. Smoke platform green.
+- Inventory, SKU, CRM, HR, Procurement: audited, no bar charts or ad-hoc colours; their sparks and trend charts already use the shared spline helpers. No layout change (no bento by design). `page_pos.js` untouched, POS gets tokens only.
+- `scripts/smoke_pos.py`: offline Day close assertion now waits for the async mount (`closeTab` awaits `refreshCounts()` first); it read the DOM too early. Only test edit.
+- Tests: 126 passed, 1 skipped. `make smoke`, `smoke-pos`, `smoke-crm`, `smoke-platform` green.

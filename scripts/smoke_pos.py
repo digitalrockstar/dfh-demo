@@ -36,7 +36,7 @@ try:
         pg.fill("#pq", "dates"); pg.click(".tile >> nth=0"); pg.click("[data-act=pos-split]"); pg.wait_for_selector("#pcharge:not([disabled])")
         pg.click("#pcharge"); pg.wait_for_selector(".receipt h2"); inv3 = pg.inner_text(".receipt h2"); pg.click(".modal .btn.pri")
         pg.wait_for_function("document.querySelector('#pstat').innerText.includes('2 waiting')"); pg.screenshot(path=f"{OUT}/5_offline_queue.png")
-        pg.click("[data-act=pos-tab][data-v=close]"); assert "needs a connection" in pg.inner_text("#ptab")
+        pg.click("[data-act=pos-tab][data-v=close]"); pg.wait_for_function("document.querySelector('#ptab') && document.querySelector('#ptab').innerText.includes('needs a connection')", timeout=8000)
         # 3. back online: queue drains
         ctx.set_offline(False); pg.evaluate("dispatchEvent(new Event('online'))")
         pg.wait_for_function("document.querySelector('#pstat').innerText.includes('0 waiting')", timeout=20000)
